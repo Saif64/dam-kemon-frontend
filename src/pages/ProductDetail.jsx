@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProduct, getProductHistory, getProductReviews } from '../api/api';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { getProduct, getProductHistory } from '../api/api';
 import PriceComparisonTable from '../components/PriceComparisonTable';
 import PriceHistoryChart from '../components/PriceHistoryChart';
-import ReviewCard from '../components/ReviewCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
   ArrowLeft, Star, Share2, Bell, TrendingDown, Sparkles, ShieldCheck, ExternalLink, AlertTriangle,
@@ -17,30 +16,41 @@ function formatPrice(price) {
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
+  const { state } = useLocation();
+  // If the user arrived from a search result, the full product travels in
+  // router state — use it immediately so the page renders even when the
+  // backend can't look it up (e.g. live-search results before Mongo persists).
+  const seedProduct = state?.product || null;
+
+  const [product, setProduct] = useState(seedProduct);
   const [history, setHistory] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!seedProduct);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('prices');
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
+    if (!seedProduct) setLoading(true);
     setError(null);
+
     Promise.allSettled([
       getProduct(id),
       getProductHistory(id),
-      getProductReviews(id),
-    ]).then(([productRes, historyRes, reviewsRes]) => {
+    ]).then(([productRes, historyRes]) => {
+      if (cancelled) return;
       if (productRes.status === 'fulfilled') {
         setProduct(productRes.value.data);
-      } else {
-        setError({ kind: productRes.reason?.response?.status === 404 ? 'not_found' : 'network' });
+      } else if (!seedProduct) {
+        // Only surface an error if we don't already have a product to render.
+        const status = productRes.reason?.response?.status;
+        setError({ kind: status === 404 ? 'not_found' : 'network' });
       }
       setHistory(historyRes.status === 'fulfilled' && Array.isArray(historyRes.value.data) ? historyRes.value.data : []);
-      setReviews(reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : []);
-    }).finally(() => setLoading(false));
-  }, [id]);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [id, seedProduct]);
 
   if (loading) {
     return (
@@ -58,12 +68,12 @@ export default function ProductDetail() {
           <AlertTriangle className="w-8 h-8 text-red" />
         </div>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold italic text-ink mb-2">
-          {isNetwork ? 'Scraper engine unreachable' : 'Product Not Found'}
+          {isNetwork ? 'Backend unreachable' : 'Product not found'}
         </h2>
         <p className="text-gray text-sm mb-6 max-w-md mx-auto">
           {isNetwork
             ? <>Backend at <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">/api</code> isn't responding. Start the Spring Boot server with <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">./gradlew bootRun</code>.</>
-            : "The product you're looking for doesn't exist or hasn't been scraped yet."}
+            : <>We can't find this product. Start a new search from the home page.</>}
         </p>
         <Link to="/" className="btn-primary inline-flex">
           <ArrowLeft className="w-4 h-4" /> Back to home
@@ -81,7 +91,6 @@ export default function ProductDetail() {
   const tabs = [
     { id: 'prices', label: 'Prices', count: sellerCount },
     { id: 'history', label: 'History' },
-    { id: 'reviews', label: 'Reviews', count: reviews.length },
   ];
 
   return (
@@ -93,7 +102,6 @@ export default function ProductDetail() {
         <ArrowLeft className="w-4 h-4" /> Back to results
       </button>
 
-      {/* Product Header */}
       <div className="card-elev overflow-hidden mb-4 sm:mb-6">
         <div className="flex flex-col md:flex-row">
           <div className="relative w-full md:w-72 lg:w-96 aspect-[4/3] md:aspect-auto bg-gradient-to-br from-cream-soft via-cream to-yellow-soft flex items-center justify-center shrink-0 overflow-hidden">
@@ -103,7 +111,7 @@ export default function ProductDetail() {
               <span className="font-serif text-7xl sm:text-8xl italic text-ink/10">{(product.category || 'P')[0]}</span>
             )}
             <div className="absolute top-3 left-3 sm:top-4 sm:left-4 inline-flex items-center gap-1 bg-white/90 backdrop-blur text-ink text-[10px] sm:text-[11px] font-mono uppercase tracking-wider px-2 py-1 rounded-full">
-              <Sparkles className="w-3 h-3 text-yellow" /> Tracked daily
+              <Sparkles className="w-3 h-3 text-yellow" /> Live from search
             </div>
           </div>
 
@@ -124,15 +132,21 @@ export default function ProductDetail() {
               </p>
             )}
 
-            <div className="flex items-center gap-2 sm:gap-3 mb-5 flex-wrap">
-              <div className="flex items-center gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`w-4 h-4 ${i < Math.round(product.averageRating || product.rating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
-                ))}
+            {(product.averageRating || product.totalReviews) && (
+              <div className="flex items-center gap-2 sm:gap-3 mb-5 flex-wrap">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`w-4 h-4 ${i < Math.round(product.averageRating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
+                  ))}
+                </div>
+                {product.averageRating != null && (
+                  <span className="text-ink font-semibold text-sm">{Number(product.averageRating).toFixed(1)}</span>
+                )}
+                {product.totalReviews != null && (
+                  <span className="text-gray text-xs sm:text-sm">({product.totalReviews} reviews)</span>
+                )}
               </div>
-              <span className="text-ink font-semibold text-sm">{(product.averageRating || product.rating || 0).toFixed(1)}</span>
-              <span className="text-gray text-xs sm:text-sm">({product.totalReviews || reviews.length} reviews)</span>
-            </div>
+            )}
 
             <div className="rounded-2xl bg-gradient-to-br from-cream-soft to-white border border-line p-3 sm:p-4 mb-4">
               <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
@@ -155,8 +169,8 @@ export default function ProductDetail() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {cheapest && (
-                <a href={cheapest.productUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn-accent flex-1 sm:flex-none">
+              {cheapest && cheapest.productUrl && (
+                <a href={cheapest.productUrl} target="_blank" rel="noopener noreferrer" className="btn-accent flex-1 sm:flex-none">
                   Buy from {cheapest.siteName} <ExternalLink className="w-4 h-4" />
                 </a>
               )}
@@ -178,7 +192,6 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 bg-white border border-line rounded-full p-1 mb-4 sm:mb-6 overflow-x-auto no-scrollbar sticky top-14 sm:top-16 z-10 shadow-[var(--shadow-soft)]">
         {tabs.map((tab) => (
           <button
@@ -201,23 +214,6 @@ export default function ProductDetail() {
       <div className="animate-fade-in">
         {activeTab === 'prices' && <PriceComparisonTable prices={product.prices || []} />}
         {activeTab === 'history' && <PriceHistoryChart history={history} />}
-        {activeTab === 'reviews' && (
-          <div>
-            {reviews.length === 0 ? (
-              <div className="card-soft p-8 sm:p-10 text-center">
-                <p className="text-gray text-sm">No reviews available yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5 sm:space-y-3">
-                {reviews.map((review, idx) => (
-                  <div key={idx} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.05}s`, animationFillMode: 'both' }}>
-                    <ReviewCard review={review} index={idx} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

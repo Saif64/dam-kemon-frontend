@@ -1,10 +1,11 @@
 # dam-kemon-frontend
 
-> **Damkemon** is a Bangladesh price comparison engine. Search any product → we scan
-> 10+ Bangladeshi e-commerce sites plus Facebook sellers and surface the cheapest.
+> **Damkemon** is a Bangladesh price-comparison engine. The backend nightly
+> indexes 60+ BD e-commerce shops into MongoDB; this frontend lets users
+> search the indexed catalog instantly with grouped, cross-shop pricing.
 >
-> This repo is the **frontend** — Vite + React 18. The companion backend lives at
-> [Saif64/dam-kemon-backend](https://github.com/Saif64/dam-kemon-backend).
+> Vite + React 18. The companion backend lives at
+> [DolfinMind/dam-kemon-backend](https://github.com/DolfinMind/dam-kemon-backend).
 
 ---
 
@@ -27,7 +28,10 @@
 ### Prerequisites
 
 - **Node 18+** and npm
-- The [backend](https://github.com/Saif64/dam-kemon-backend) running on `http://localhost:8080` (the Vite dev server proxies `/api` to it)
+- The [backend](https://github.com/DolfinMind/dam-kemon-backend) running on
+  `http://localhost:8080`. The backend needs a MongoDB Atlas URI configured —
+  see its README for the 5-minute setup. The Vite dev server proxies `/api`
+  to it.
 
 ### 1. Install
 
@@ -41,7 +45,9 @@ npm install
 cp .env.example .env
 ```
 
-Defaults work out of the box for local dev — `VITE_API_URL` left blank means axios hits `/api` and Vite proxies to `localhost:8080`. Override only when the backend is on a different origin:
+Defaults work out of the box for local dev — `VITE_API_URL` left blank means
+axios hits `/api` and Vite proxies to `localhost:8080`. Override only when
+the backend is on a different origin:
 
 ```env
 VITE_API_URL=https://api.damkemon.com
@@ -66,12 +72,27 @@ npm run preview      # local preview of the built bundle
 
 | Route | File | Notes |
 |---|---|---|
-| `/` | [Home.jsx](src/pages/Home.jsx) | Hero, category grid, deals, F-commerce promo, how-it-works |
-| `/search?q=...` | [SearchResults.jsx](src/pages/SearchResults.jsx) | Product-first list with detected-category chip |
-| `/product/:id` | [ProductDetail.jsx](src/pages/ProductDetail.jsx) | Tabs: prices, history, reviews |
+| `/` | [Home.jsx](src/pages/Home.jsx) | Hero + search bar + how-it-works |
+| `/search?q=...` | [SearchResults.jsx](src/pages/SearchResults.jsx) | DB-first instant search, grouped per-product card with price table |
+| `/product/:idOrSlug` | [ProductDetail.jsx](src/pages/ProductDetail.jsx) | Tabs: Prices, History. Reads product from router state when available so it works even when the backend can't refetch by ID |
 | `/compare?ids=A,B,C` | [Compare.jsx](src/pages/Compare.jsx) | 4-up grid + spec table, winner crown per row |
-| `/sellers` | [Sellers.jsx](src/pages/Sellers.jsx) | Facebook seller directory |
-| `/dashboard` | [Dashboard.jsx](src/pages/Dashboard.jsx) | Aggregate stats, charts, scraper status |
+| `/sellers` | [Sellers.jsx](src/pages/Sellers.jsx) | Facebook seller directory (manual curation only) |
+| `/dashboard` | [Dashboard.jsx](src/pages/Dashboard.jsx) | Live `/api/dashboard/stats` — products / shops / reviews / price points |
+
+---
+
+## Search UX
+
+The home and navbar [SearchBar](src/components/SearchBar.jsx) renders an
+**autosuggest** dropdown (debounced 180ms, ↑/↓/Enter/Esc keyboard nav)
+backed by `GET /api/search/suggest?q=...`. Selecting a row goes straight to
+the product page; hitting Enter without a selection runs a full search.
+
+The [SearchResults](src/pages/SearchResults.jsx) page calls
+`GET /api/search?q=...` — synchronous, instant, served from the indexed
+catalog. Each [SearchProductCard](src/components/SearchProductCard.jsx)
+shows headline price + a compact **per-seller price table** below it (one
+row per shop, cheapest highlighted, "Buy" deep-link per row).
 
 ---
 
@@ -79,17 +100,24 @@ npm run preview      # local preview of the built bundle
 
 ```
 src/
-├── api/api.js               # axios client, VITE_API_URL aware
+├── api/api.js               # axios client + endpoint helpers
 ├── App.jsx                  # router + layout shell
 ├── main.jsx                 # Vite entry
 ├── index.css                # Tailwind directives + globals
 ├── assets/
-├── pages/                   # one file per route (above)
+├── pages/
+│   ├── Home.jsx             # hero + search
+│   ├── SearchResults.jsx    # DB-first list
+│   ├── ProductDetail.jsx    # prices + history tabs
+│   ├── Compare.jsx          # up to 4 products side by side
+│   ├── Sellers.jsx          # FB sellers directory
+│   └── Dashboard.jsx        # live catalog stats
 └── components/
     ├── Navbar.jsx · BottomNav.jsx · Footer.jsx
-    ├── SearchBar.jsx · SearchProductCard.jsx · ProductCard.jsx
-    ├── PriceComparisonTable.jsx · PriceHistoryChart.jsx
-    ├── ReviewCard.jsx · StatsCard.jsx · LoadingSpinner.jsx
+    ├── SearchBar.jsx        # autosuggest dropdown
+    ├── SearchProductCard.jsx · PriceComparisonTable.jsx
+    ├── PriceHistoryChart.jsx · ProductCard.jsx
+    ├── StatsCard.jsx · LoadingSpinner.jsx
 ```
 
 ---
@@ -106,16 +134,20 @@ Only one, and it's optional. See [.env.example](.env.example).
 
 ## Backend contract
 
-The axios client in [src/api/api.js](src/api/api.js) is the single place that talks to the backend. Endpoints it consumes:
+The axios client in [src/api/api.js](src/api/api.js) is the single place that
+talks to the backend. Endpoints it consumes:
 
-- `GET /api/search?q=&page=&size=` — search
-- `GET /api/products`, `/api/products/:id`, `/api/products/:id/history`, `/api/products/:id/reviews`
+- `GET /api/search?q=...` — DB-first search, returns grouped products
+- `GET /api/search/suggest?q=&limit=` — autocomplete dropdown
+- `GET /api/products`, `/api/products/:idOrSlug`, `/api/products/:idOrSlug/history`
 - `GET /api/compare?ids=A,B,C`
 - `GET /api/sellers`, `/api/sellers/:id`
-- `GET /api/sites`, `/api/dashboard/stats`
-- `POST /api/scrape`
+- `GET /api/dashboard/stats` — used by Dashboard
+- `POST /api/admin/index/run?wipe=true` · `GET /api/admin/index/status` · `GET /api/admin/shops`
+- `POST /api/scrape` — legacy "quick scrape" button (now triggers a full reindex)
 
-See the [backend README](https://github.com/Saif64/dam-kemon-backend) for the full surface.
+See the [backend README](https://github.com/DolfinMind/dam-kemon-backend)
+for the full surface.
 
 ---
 
@@ -132,4 +164,4 @@ npm run lint      # eslint .
 
 ## See also
 
-- [Backend repo](https://github.com/Saif64/dam-kemon-backend) — Spring Boot service that powers `/api/*`
+- [Backend repo](https://github.com/DolfinMind/dam-kemon-backend) — Spring Boot service that powers `/api/*`

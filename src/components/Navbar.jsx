@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, BarChart3, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
@@ -7,7 +7,6 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -31,26 +30,15 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { to: '/#categories', label: 'Categories' },
-    { to: '/#deals',      label: 'Deals' },
-    { to: '/compare',     label: 'Compare' },
-    { to: '/sellers',     label: 'Fcommerce' },
-    { to: '/dashboard',   label: 'Dashboard' },
+    { to: '/',          label: 'Home' },
+    { to: '/compare',   label: 'Compare' },
+    { to: '/sellers',   label: 'Sellers' },
+    { to: '/dashboard', label: 'Dashboard' },
   ];
 
   const handleNavClick = (to) => {
     setMobileOpen(false);
-    if (to.startsWith('/#')) {
-      const id = to.slice(2);
-      if (location.pathname === '/') {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        navigate('/');
-        setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 120);
-      }
-    } else {
-      navigate(to);
-    }
+    navigate(to);
   };
 
   return (

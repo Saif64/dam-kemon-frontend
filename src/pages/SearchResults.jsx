@@ -4,7 +4,7 @@ import { searchProducts } from '../api/api';
 import SearchProductCard from '../components/SearchProductCard';
 import { SkeletonRow } from '../components/LoadingSpinner';
 import {
-  Search, Clock, ArrowUpDown, ArrowLeft, Sparkles, TrendingDown,
+  Search, ArrowUpDown, ArrowLeft, Sparkles, TrendingDown,
   TrendingUp, Equal, AlertTriangle, RefreshCw,
 } from 'lucide-react';
 
@@ -30,9 +30,9 @@ function formatPrice(price) {
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
-  const [response, setResponse] = useState(null);
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [meta, setMeta] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('relevance');
@@ -43,20 +43,22 @@ export default function SearchResults() {
     if (!q) { setLoading(false); setError(null); return; }
     setLoading(true);
     setError(null);
-    setResponse(null);
-    setProducts([]);
-
     searchProducts(q)
       .then((res) => {
         const data = res.data || {};
-        const items = Array.isArray(data) ? data : (data.products || data.content || []);
-        setResponse(data);
-        setProducts(items);
+        setProducts(Array.isArray(data.products) ? data.products : []);
+        setMeta({
+          totalResults: data.totalResults ?? 0,
+          sitesSearched: data.sitesSearched ?? [],
+          detectedCategory: data.detectedCategory,
+          brands: data.brands ?? [],
+          confidence: data.confidence,
+        });
       })
       .catch((err) => {
-        const code = err.response?.status;
-        if (code === 404) setError({ kind: 'no_results' });
-        else setError({ kind: 'network', message: err.message });
+        const status = err.response?.status;
+        setError({ kind: status ? 'http' : 'network', message: err.message, status });
+        setProducts([]);
       })
       .finally(() => setLoading(false));
   };
@@ -84,11 +86,9 @@ export default function SearchResults() {
     if (sortBy === 'price_asc')  arr.sort((a, b) => (a.lowestPrice ?? Infinity) - (b.lowestPrice ?? Infinity));
     else if (sortBy === 'price_desc') arr.sort((a, b) => (b.lowestPrice ?? 0) - (a.lowestPrice ?? 0));
     else if (sortBy === 'rating')     arr.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
-    // relevance = backend default ranking
     return arr;
   }, [filtered, sortBy]);
 
-  // Stats across all visible products' lowest prices
   const stats = useMemo(() => {
     const lows = sorted.map((p) => p.lowestPrice).filter((v) => v != null);
     if (lows.length === 0) return null;
@@ -132,13 +132,13 @@ export default function SearchResults() {
         </form>
       </div>
 
-      {/* Context bar */}
+      {/* Context */}
       <div className="card-elev p-4 sm:p-5 mb-3 sm:mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-ink font-semibold text-sm sm:text-base">
               {loading ? (
-                <span className="text-gray">Searching relevant shops…</span>
+                <span className="text-gray">Searching the catalog…</span>
               ) : error ? (
                 <span className="text-red">Unable to fetch results</span>
               ) : (
@@ -148,25 +148,20 @@ export default function SearchResults() {
                 </>
               )}
             </h1>
-            {!loading && !error && response?.detectedCategory && (
+            {!loading && !error && meta?.detectedCategory && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="chip chip-ghost !text-[10px] !py-1 !px-2.5">
                   <Sparkles className="w-3 h-3 text-yellow" />
-                  Category: <b className="ml-1">{response.detectedCategory}</b>
+                  Category: <b className="ml-1 capitalize">{meta.detectedCategory}</b>
                 </span>
-                {response?.brands?.length > 0 && (
+                {meta?.brands?.length > 0 && (
                   <span className="chip chip-ghost !text-[10px] !py-1 !px-2.5 capitalize">
-                    Brand: <b className="ml-1">{response.brands.join(', ')}</b>
+                    Brand: <b className="ml-1">{meta.brands.join(', ')}</b>
                   </span>
                 )}
-                {response?.sitesSkipped?.length > 0 && (
-                  <span className="chip chip-ghost !text-[10px] !py-1 !px-2.5 text-gray" title={response.sitesSkipped.join(', ')}>
-                    Skipped {response.sitesSkipped.length} irrelevant {response.sitesSkipped.length === 1 ? 'site' : 'sites'}
-                  </span>
-                )}
-                {response?.sitesSearched?.length > 0 && (
-                  <span className="chip chip-ghost !text-[10px] !py-1 !px-2.5 text-gray" title={response.sitesSearched.join(', ')}>
-                    Checked {response.sitesSearched.length} {response.sitesSearched.length === 1 ? 'shop' : 'shops'}
+                {meta?.sitesSearched?.length > 0 && (
+                  <span className="chip chip-ghost !text-[10px] !py-1 !px-2.5 text-gray" title={meta.sitesSearched.join(', ')}>
+                    {meta.sitesSearched.length} {meta.sitesSearched.length === 1 ? 'shop' : 'shops'} have it
                   </span>
                 )}
               </div>
@@ -184,8 +179,6 @@ export default function SearchResults() {
                 <span className="inline-flex items-center gap-1">
                   <Equal className="w-3 h-3" /> Avg <span className="text-ink font-bold">{formatPrice(stats.avg)}</span>
                 </span>
-                <span className="text-line-strong hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center gap-1"><Clock className="w-3 h-3" /> Just now</span>
               </div>
             )}
           </div>
@@ -255,12 +248,12 @@ export default function SearchResults() {
             <AlertTriangle className="w-8 h-8 text-red" />
           </div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">
-            {error.kind === 'network' ? 'Scraper engine unreachable' : 'No results'}
+            {error.kind === 'network' ? 'Backend unreachable' : 'Search failed'}
           </h2>
           <p className="text-gray text-sm max-w-md mx-auto mb-5">
             {error.kind === 'network'
-              ? <>The backend at <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">/api</code> isn't responding. Start the Spring Boot server with <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">./gradlew bootRun</code> and try again.</>
-              : <>No products found for "{query}". Try a different term.</>}
+              ? <>The backend at <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">/api</code> isn't responding. Start it with <code className="font-mono text-ink bg-cream-soft px-1.5 py-0.5 rounded">./gradlew bootRun</code>.</>
+              : error.message || 'Try again in a moment.'}
           </p>
           <button onClick={() => runSearch(query)} className="btn-ghost inline-flex">
             <RefreshCw className="w-4 h-4" /> Retry
@@ -271,8 +264,12 @@ export default function SearchResults() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-cream-soft mb-4">
             <Search className="w-8 h-8 text-ink/30" />
           </div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">No products found</h2>
-          <p className="text-gray text-sm">We checked every relevant shop but didn't find "{query}". Try a different term.</p>
+          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">No results yet</h2>
+          <p className="text-gray text-sm max-w-md mx-auto">
+            Our catalog doesn't have anything matching <b>"{query}"</b> yet.
+            The indexer crawls 60+ BD shops nightly at 3 AM — try a broader term, or trigger a reindex
+            from <Link to="/dashboard" className="text-ink underline">Dashboard → Quick scrape</Link>.
+          </p>
         </div>
       ) : (
         <div className="space-y-3 sm:space-y-4">

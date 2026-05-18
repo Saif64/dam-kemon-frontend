@@ -26,14 +26,20 @@ api.interceptors.response.use(
 export const searchProducts = (query, page = 0, size = 20) =>
   api.get('/search', { params: { q: query, page, size } });
 
+/** Autocomplete dropdown — returns up to N matching products by prefix. */
+export const suggestProducts = (prefix, limit = 8) =>
+  api.get('/search/suggest', { params: { q: prefix, limit } });
+
+/** Trigger the nightly catalog reindex on demand. */
+export const triggerReindex = () => api.post('/admin/index/run');
+export const indexStatus = () => api.get('/admin/index/status');
+export const listShops = () => api.get('/admin/shops');
+
 export const getProduct = (id) =>
   api.get(`/products/${id}`);
 
 export const getProductHistory = (id) =>
   api.get(`/products/${id}/history`);
-
-export const getProductReviews = (id) =>
-  api.get(`/products/${id}/reviews`);
 
 export const getSites = () =>
   api.get('/sites');

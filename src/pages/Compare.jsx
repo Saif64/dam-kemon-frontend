@@ -295,7 +295,16 @@ export default function Compare() {
               {pickerLoading ? (
                 <LoadingSpinner text="Loading products…" />
               ) : filteredPicker.length === 0 ? (
-                <div className="p-8 text-center text-gray text-sm">No products match.</div>
+                <div className="p-8 text-center text-sm">
+                  {pickerProducts.length === 0 ? (
+                    <>
+                      <p className="text-ink font-semibold mb-1">No saved products yet</p>
+                      <p className="text-gray">Compare needs persisted products. Run a search first — anything we find gets saved (when MongoDB is reachable).</p>
+                    </>
+                  ) : (
+                    <p className="text-gray">No products match the filter.</p>
+                  )}
+                </div>
               ) : (
                 <div className="divide-y divide-line">
                   {filteredPicker.map((p) => (
