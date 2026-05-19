@@ -1,4 +1,5 @@
 import { ExternalLink, Star, Check, Truck, Crown, Award } from 'lucide-react';
+import { trackClick } from '../api/analytics';
 
 function formatPrice(price) {
   if (!price && price !== 0) return 'N/A';
@@ -18,7 +19,7 @@ function isFacebookSeller(name) {
   return name?.toLowerCase().includes('facebook') || name?.toLowerCase().includes('fb');
 }
 
-export default function PriceComparisonTable({ prices = [] }) {
+export default function PriceComparisonTable({ prices = [], productId }) {
   if (!prices.length) {
     return (
       <div className="card-soft p-8 sm:p-10 text-center">
@@ -125,7 +126,10 @@ export default function PriceComparisonTable({ prices = [] }) {
                       ? 'bg-ink text-cream hover:bg-red'
                       : 'bg-cream text-ink border border-line-strong hover:bg-ink hover:text-cream hover:border-ink'
                   }`}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    trackClick(productId, item.siteSlug || item.siteName);
+                  }}
                 >
                   Visit <ExternalLink className="w-3 h-3" />
                 </a>

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAnonId } from './analytics';
 
 // VITE_API_URL — leave blank for dev (Vite proxies /api) or same-origin prod
 // (reverse-proxy /api → backend). Set to e.g. https://api.example.com if the
@@ -15,10 +16,18 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const id = getAnonId();
+  if (id) config.headers['X-Anon-Id'] = id;
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    if (error.response?.status !== 429) {
+      console.error('API Error:', error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -34,6 +43,13 @@ export const suggestProducts = (prefix, limit = 8) =>
 export const triggerReindex = () => api.post('/admin/index/run');
 export const indexStatus = () => api.get('/admin/index/status');
 export const listShops = () => api.get('/admin/shops');
+export const retryFailedShops = () => api.post('/admin/index/retry');
+export const reindexShop = (slug) => api.post(`/admin/index/shop/${encodeURIComponent(slug)}`);
+export const setShopStatus = (slug, status) =>
+  api.post(`/admin/shops/${encodeURIComponent(slug)}/status`, { status });
+export const listPendingShops = () => api.get('/admin/pending-shops');
+export const approvePendingShop = (id) => api.post(`/admin/pending-shops/${id}/approve`);
+export const rejectPendingShop = (id, note) => api.post(`/admin/pending-shops/${id}/reject`, { note });
 
 export const getProduct = (id) =>
   api.get(`/products/${id}`);
@@ -61,5 +77,15 @@ export const getSellers = (params = {}) =>
 
 export const getSeller = (id) =>
   api.get(`/sellers/${id}`);
+
+/** Public-facing live counters: active users, trending searches, hot drops. */
+export const getLiveStats = () => api.get('/stats/live');
+export const getTrendingSearches = (limit = 10) =>
+  api.get('/stats/trending', { params: { limit } });
+export const getHotDrops = (limit = 12) =>
+  api.get('/stats/hot-drops', { params: { limit } });
+
+/** Public shop submission. */
+export const submitShop = (payload) => api.post('/shops/submit', payload);
 
 export default api;

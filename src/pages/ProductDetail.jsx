@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { getProduct, getProductHistory } from '../api/api';
+import { trackView } from '../api/analytics';
 import PriceComparisonTable from '../components/PriceComparisonTable';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -51,6 +52,11 @@ export default function ProductDetail() {
 
     return () => { cancelled = true; };
   }, [id, seedProduct]);
+
+  useEffect(() => {
+    const pid = product?.id || id;
+    if (pid) trackView(pid);
+  }, [product?.id, id]);
 
   if (loading) {
     return (
@@ -222,7 +228,9 @@ export default function ProductDetail() {
       </div>
 
       <div className="animate-fade-in">
-        {activeTab === 'prices' && <PriceComparisonTable prices={product.prices || []} />}
+        {activeTab === 'prices' && (
+          <PriceComparisonTable prices={product.prices || []} productId={product.id || id} />
+        )}
         {activeTab === 'history' && <PriceHistoryChart history={history} />}
       </div>
     </div>

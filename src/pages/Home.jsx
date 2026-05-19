@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllProducts, getDashboardStats } from '../api/api';
 import SearchBar from '../components/SearchBar';
+import LiveActivityPill from '../components/LiveActivityPill';
+import TrendingStrip from '../components/TrendingStrip';
+import HotDropsRail from '../components/HotDropsRail';
 import { Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown } from 'lucide-react';
 
 function fmt(p) {
@@ -43,13 +46,7 @@ export default function Home() {
         <div className="absolute -bottom-20 left-1/3 w-72 h-72 rounded-full bg-lime/25 blur-3xl animate-blob pointer-events-none" style={{ animationDelay: '8s' }} />
 
         <div className="container-tight pt-8 sm:pt-14 lg:pt-20 pb-10 sm:pb-14 lg:pb-16 text-center relative">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur border border-line-strong px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-[13px] font-medium mb-5 sm:mb-7 shadow-[var(--shadow-soft)]">
-            <span className="relative flex w-2 h-2">
-              <span className="absolute inset-0 bg-green rounded-full animate-pulse-dot" />
-              <span className="relative w-2 h-2 bg-green rounded-full" />
-            </span>
-            <span>{stats?.totalProducts ? `${stats.totalProducts.toLocaleString()} products indexed` : 'Live BD price comparison'}</span>
-          </div>
+          <LiveActivityPill fallbackProductsCount={stats?.totalProducts} />
 
           <h1 className="font-serif font-semibold leading-[0.92] tracking-[-0.035em] mb-4 sm:mb-5 text-[clamp(2.5rem,8.5vw,6.75rem)]">
             <em className="text-red font-medium">Dam kemon,</em>
@@ -78,6 +75,10 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      <TrendingStrip />
+
+      <HotDropsRail />
 
       {trending.length > 0 && (
         <section className="container-tight py-10 sm:py-14 lg:py-16">

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight } from 'lucide-react';
+import { trackClick } from '../api/analytics';
 
 function fmt(p) {
   if (p == null) return 'N/A';
@@ -163,7 +164,10 @@ export default function SearchProductCard({ product, rank }) {
                   href={sp.productUrl || '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    trackClick(product.id, sp.siteSlug || sp.siteName);
+                  }}
                   className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-mono px-2 py-1 rounded-full whitespace-nowrap transition-colors ${
                     i === 0
                       ? 'bg-green/15 text-green font-bold hover:bg-green/25'

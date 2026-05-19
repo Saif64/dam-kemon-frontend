@@ -8,6 +8,7 @@ import ProductDetail from './pages/ProductDetail';
 import Dashboard from './pages/Dashboard';
 import Compare from './pages/Compare';
 import Sellers from './pages/Sellers';
+import SubmitShop from './pages/SubmitShop';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/sellers" element={<Sellers />} />
+            <Route path="/submit-shop" element={<SubmitShop />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </main>
