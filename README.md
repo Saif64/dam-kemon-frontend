@@ -181,6 +181,66 @@ npm run lint      # eslint .
 
 ---
 
+## Roadmap
+
+What's left on the frontend side. Backend roadmap with the full picture
+lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#roadmap).
+
+### Phase 2 — live signals on the public site
+
+| | Item |
+|---|---|
+| ⬜ | Live "X searching now" pill on Home (polls `/api/stats/live` every 5s) |
+| ⬜ | Trending searches strip — top 10 queries with high CTR in the last 24h |
+| ⬜ | "Hot drops" rail — products with the biggest price drop in last 7 days |
+| ⬜ | "Recently viewed" rail for returning visitors (localStorage anon-id) |
+| ⬜ | Anonymous event beacons (`search`, `view`, `click` → backend events collection) |
+
+### Phase 3 — admin console (separate `/admin` SPA)
+
+| | Item |
+|---|---|
+| ⬜ | Sign-in screen exchanging `X-Admin-Key` for a session cookie |
+| ⬜ | Indexer dashboard: live progress (SSE), per-shop status grid, wipe/reindex buttons |
+| ⬜ | Shop manager — CRUD on the catalog without redeploying |
+| ⬜ | Catalog browser — paginated grid, click → edit (rename, fix category, merge duplicates) |
+| ⬜ | Search log — last 1k queries with `totalResults`, clickable to re-run |
+| ⬜ | Cache + scheduler controls (flush, enable/disable jobs) |
+| ⬜ | Live counters: DAU, MAU, searches/day, CTR per shop, no-result search leaderboard |
+
+### Phase 4 — user accounts
+
+| | Item |
+|---|---|
+| ⬜ | Sign-up / sign-in (Google + email magic link) |
+| ⬜ | Saved searches — notify when results change |
+| ⬜ | Price-drop alerts (email or Telegram) |
+| ⬜ | Wishlist (per-user, cloud-synced) |
+
+### Phase 5 — SEO + performance
+
+| | Item |
+|---|---|
+| ⬜ | Server-render (or SSG via `vite-plugin-ssr`) product detail pages so Google indexes them |
+| ⬜ | Generate `/sitemap.xml` of our own catalog |
+| ⬜ | Open Graph image generator per product (so shared links preview right) |
+| ⬜ | Schema.org `Product` JSON-LD on our pages |
+| ⬜ | Code-split the bundle (current 700KB JS is fine for dev, not for first paint) |
+| ⬜ | Image CDN / on-the-fly resize for product images |
+
+### UI / UX polish backlog
+
+| | Item |
+|---|---|
+| ⬜ | Compare page wired to the new product-centric model (drag products from search into Compare) |
+| ⬜ | Empty-state illustrations (Sellers page, "no results" search) |
+| ⬜ | Dark mode toggle |
+| ⬜ | Mobile bottom-sheet for "All sellers" instead of horizontal scroll |
+| ⬜ | Skeleton loaders that match the new card shape |
+| ⬜ | Locale toggle (English / বাংলা) |
+
+---
+
 ## See also
 
 - [Backend repo](https://github.com/DolfinMind/dam-kemon-backend) — Spring Boot service that powers `/api/*`
