@@ -124,11 +124,30 @@ src/
 
 ## Environment variables
 
-Only one, and it's optional. See [.env.example](.env.example).
+Three templates ship with the repo — copy the one you want to a real
+`.env*` file (gitignored):
+
+| Template | Vite mode | Use for |
+|---|---|---|
+| [.env.example](.env.example) | dev (default) | `npm run dev`; leave `VITE_API_URL` blank to use the Vite proxy |
+| [.env.staging.example](.env.staging.example) | `staging` | `npm run build -- --mode staging`; points at staging API |
+| [.env.production.example](.env.production.example) | `production` | `npm run build` (production is Vite's default for `build`); points at prod API |
 
 | Var | When to set |
 |---|---|
-| `VITE_API_URL` | Backend lives on a different origin in prod. Leave blank for dev (Vite proxy) or same-origin prod (reverse proxy). |
+| `VITE_API_URL` | Backend lives on a different origin. Leave blank for dev (Vite proxy) or same-origin prod (reverse proxy). |
+| `VITE_ENV_LABEL` | Optional. Visible in the UI / analytics tags so you can tell environments apart. |
+
+Build for a specific environment:
+
+```bash
+npm run build                         # production (default)
+npm run build -- --mode staging       # staging
+npm run dev                           # dev with Vite proxy
+```
+
+`.gitignore` excludes every `.env*` file except the `.env*.example`
+templates, so secrets stay local.
 
 ---
 
