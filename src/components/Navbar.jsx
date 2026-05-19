@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, BarChart3, Sparkles } from 'lucide-react';
+import { Search, Menu, X, BarChart3, Sparkles, User as UserIcon, Shield } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 
 export default function Navbar() {
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -85,6 +87,23 @@ export default function Navbar() {
                   className="w-44 lg:w-56 pl-10 pr-3 py-2.5 bg-white border border-line rounded-full text-sm text-ink placeholder-gray-soft focus:outline-none focus:border-ink/40 focus:w-60 lg:focus:w-72 focus:shadow-[0_0_0_4px_rgba(21,19,26,0.04)] transition-all"
                 />
               </form>
+              {user ? (
+                <>
+                  {user.role === 'admin' && (
+                    <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-red font-semibold px-3 py-2 rounded-full hover:bg-red/10 transition-colors" title="Admin console">
+                      <Shield className="w-4 h-4" /><span className="hidden lg:inline">Admin</span>
+                    </Link>
+                  )}
+                  <Link to="/account" className="inline-flex items-center gap-1.5 text-sm text-ink/80 hover:text-ink px-3 py-2 rounded-full hover:bg-cream transition-colors">
+                    <UserIcon className="w-4 h-4" />
+                    <span className="hidden lg:inline">{user.displayName || 'Account'}</span>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/sign-in" className="text-sm text-ink/70 hover:text-ink font-medium px-3 py-2 rounded-full hover:bg-cream transition-colors hidden md:inline-block">
+                  Sign in
+                </Link>
+              )}
               <Link to="/dashboard" className="btn-accent !text-sm !px-4 !py-2.5">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden lg:inline">Dashboard</span>
@@ -144,6 +163,25 @@ export default function Navbar() {
                   <span className="text-gray-soft text-xl">→</span>
                 </button>
               ))}
+              {user ? (
+                <>
+                  <button onClick={() => handleNavClick('/account')} className="px-4 py-3.5 text-left text-ink hover:bg-white rounded-2xl text-[15px] font-medium flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2"><UserIcon className="w-4 h-4" /> {user.displayName || 'Account'}</span>
+                    <span className="text-gray-soft text-xl">→</span>
+                  </button>
+                  {user.role === 'admin' && (
+                    <button onClick={() => handleNavClick('/admin')} className="px-4 py-3.5 text-left text-red hover:bg-white rounded-2xl text-[15px] font-semibold flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2"><Shield className="w-4 h-4" /> Admin</span>
+                      <span className="text-gray-soft text-xl">→</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button onClick={() => handleNavClick('/sign-in')} className="px-4 py-3.5 text-left text-ink hover:bg-white rounded-2xl text-[15px] font-medium flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2"><UserIcon className="w-4 h-4" /> Sign in</span>
+                  <span className="text-gray-soft text-xl">→</span>
+                </button>
+              )}
             </div>
             <Link
               to="/dashboard"

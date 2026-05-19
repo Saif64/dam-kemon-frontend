@@ -28,6 +28,7 @@ export default function Footer() {
             <Link to="/compare" className="text-cream/70 hover:text-cream text-sm transition-colors">Compare</Link>
             <Link to="/sellers" className="text-cream/70 hover:text-cream text-sm transition-colors">Sellers</Link>
             <Link to="/submit-shop" className="text-cream/70 hover:text-cream text-sm transition-colors">Submit shop</Link>
+            <Link to="/fcommerce/signup" className="text-cream/70 hover:text-cream text-sm transition-colors">List FB shop</Link>
             <Link to="/dashboard" className="text-cream/70 hover:text-cream text-sm transition-colors">Dashboard</Link>
             <a
               href="https://github.com/Saif64/dam-kemon-backend"

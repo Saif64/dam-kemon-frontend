@@ -5,6 +5,7 @@ import SearchBar from '../components/SearchBar';
 import LiveActivityPill from '../components/LiveActivityPill';
 import TrendingStrip from '../components/TrendingStrip';
 import HotDropsRail from '../components/HotDropsRail';
+import RecentlyViewedRail from '../components/RecentlyViewedRail';
 import { Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown } from 'lucide-react';
 
 function fmt(p) {
@@ -77,6 +78,8 @@ export default function Home() {
       </section>
 
       <TrendingStrip />
+
+      <RecentlyViewedRail />
 
       <HotDropsRail />
 

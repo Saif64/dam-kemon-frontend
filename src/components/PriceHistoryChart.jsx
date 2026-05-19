@@ -41,10 +41,21 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function PriceHistoryChart({ history = [] }) {
+export default function PriceHistoryChart({ history = [], dailySeries = [] }) {
   const [selectedRange, setSelectedRange] = useState('30d');
 
   const { chartData, sites } = useMemo(() => {
+    const useDaily = (!history || !history.length) && dailySeries.length > 0;
+    if (useDaily) {
+      const range = ranges.find((r) => r.label === selectedRange);
+      let filtered = dailySeries;
+      if (range.days) filtered = dailySeries.slice(-range.days);
+      const chart = filtered.map((row) => ({
+        date: new Date(row.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        Cheapest: row.price,
+      }));
+      return { chartData: chart, sites: ['Cheapest'] };
+    }
     if (!history.length) return { chartData: [], sites: [] };
 
     const range = ranges.find((r) => r.label === selectedRange);
@@ -69,9 +80,9 @@ export default function PriceHistoryChart({ history = [] }) {
     });
 
     return { chartData: Object.values(dateMap), sites: [...siteSet] };
-  }, [history, selectedRange]);
+  }, [history, dailySeries, selectedRange]);
 
-  if (!history.length) {
+  if (!history.length && !dailySeries.length) {
     return (
       <div className="card-soft p-8 text-center">
         <p className="text-gray text-sm">No price history available yet</p>

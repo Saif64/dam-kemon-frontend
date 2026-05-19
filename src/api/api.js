@@ -88,4 +88,12 @@ export const getHotDrops = (limit = 12) =>
 /** Public shop submission. */
 export const submitShop = (payload) => api.post('/shops/submit', payload);
 
+/** Hydrate a list of product ids — used by the recently-viewed rail. */
+export const getProductsByIds = (ids) =>
+  api.get('/products/by-ids', { params: { ids: Array.isArray(ids) ? ids.join(',') : ids } });
+
+/** Daily-bucketed price history series for the price-history chart. */
+export const getDailyPriceHistory = (id, days = 30) =>
+  api.get(`/products/${id}/history/daily`, { params: { days } });
+
 export default api;

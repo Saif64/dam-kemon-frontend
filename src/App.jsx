@@ -1,34 +1,75 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
+import { AuthProvider } from './auth/AuthContext';
+import LoadingSpinner from './components/LoadingSpinner';
+
+// Eager: the landing page + search are the hot path.
 import Home from './pages/Home';
 import SearchResults from './pages/SearchResults';
-import ProductDetail from './pages/ProductDetail';
-import Dashboard from './pages/Dashboard';
-import Compare from './pages/Compare';
-import Sellers from './pages/Sellers';
-import SubmitShop from './pages/SubmitShop';
+
+// Lazy-load everything else so the initial bundle stays slim.
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Compare = lazy(() => import('./pages/Compare'));
+const Sellers = lazy(() => import('./pages/Sellers'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const SubmitShop = lazy(() => import('./pages/SubmitShop'));
+const SignIn = lazy(() => import('./pages/SignIn'));
+const AuthVerify = lazy(() => import('./pages/AuthVerify'));
+const Account = lazy(() => import('./pages/Account'));
+const FcommerceSignup = lazy(() => import('./pages/FcommerceSignup'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminIndexer = lazy(() => import('./pages/admin/AdminIndexer'));
+const AdminShops = lazy(() => import('./pages/admin/AdminShops'));
+const AdminPendingShops = lazy(() => import('./pages/admin/AdminPendingShops'));
+const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
+const AdminStats = lazy(() => import('./pages/admin/AdminStats'));
+
+function PageFallback() {
+  return (
+    <div className="container-tight py-16">
+      <LoadingSpinner text="Loading…" />
+    </div>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-cream">
-        <Navbar />
-        <main className="flex-1 pb-20 md:pb-0">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/compare" element={<Compare />} />
-            <Route path="/sellers" element={<Sellers />} />
-            <Route path="/submit-shop" element={<SubmitShop />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Routes>
-        </main>
-        <Footer />
-        <BottomNav />
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen flex flex-col bg-cream">
+          <Navbar />
+          <main className="flex-1 pb-20 md:pb-0">
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/compare" element={<Compare />} />
+                <Route path="/sellers" element={<Sellers />} />
+                <Route path="/submit-shop" element={<SubmitShop />} />
+                <Route path="/fcommerce/signup" element={<FcommerceSignup />} />
+                <Route path="/sign-in" element={<SignIn />} />
+                <Route path="/auth/verify" element={<AuthVerify />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminIndexer />} />
+                  <Route path="indexer" element={<AdminIndexer />} />
+                  <Route path="shops" element={<AdminShops />} />
+                  <Route path="pending-shops" element={<AdminPendingShops />} />
+                  <Route path="stats" element={<AdminStats />} />
+                  <Route path="audit" element={<AdminAuditLog />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </main>
+          <Footer />
+          <BottomNav />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

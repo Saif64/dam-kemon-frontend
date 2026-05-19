@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getProduct, getProductHistory } from '../api/api';
+import { getProduct, getProductHistory, getDailyPriceHistory } from '../api/api';
 import { trackView } from '../api/analytics';
+import { pushRecent } from '../api/recentlyViewed';
+import { addToWishlist, removeFromWishlist, listWishlist } from '../api/auth';
+import { useAuth } from '../auth/AuthContext';
 import PriceComparisonTable from '../components/PriceComparisonTable';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ProductSEO from '../components/ProductSEO';
 import {
-  ArrowLeft, Star, Share2, Bell, TrendingDown, Sparkles, ShieldCheck, ExternalLink, AlertTriangle,
+  ArrowLeft, Star, Share2, Bell, TrendingDown, Sparkles, ShieldCheck, ExternalLink, AlertTriangle, Heart,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -55,7 +59,43 @@ export default function ProductDetail() {
 
   useEffect(() => {
     const pid = product?.id || id;
-    if (pid) trackView(pid);
+    if (pid) {
+      trackView(pid);
+      pushRecent(pid);
+    }
+  }, [product?.id, id]);
+
+  const { user } = useAuth();
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setInWishlist(false); return; }
+    const pid = product?.id || id;
+    if (!pid) return;
+    listWishlist().then((r) => {
+      setInWishlist((r.data || []).some((w) => (w.product?.id || w.productId) === pid));
+    }).catch(() => {});
+  }, [user, product?.id, id]);
+
+  const toggleWishlist = async () => {
+    const pid = product?.id || id;
+    if (!pid || !user) { navigate('/sign-in'); return; }
+    setWishlistBusy(true);
+    try {
+      if (inWishlist) { await removeFromWishlist(pid); setInWishlist(false); }
+      else { await addToWishlist(pid); setInWishlist(true); }
+    } catch { /* noop */ }
+    finally { setWishlistBusy(false); }
+  };
+
+  const [dailySeries, setDailySeries] = useState([]);
+  useEffect(() => {
+    const pid = product?.id || id;
+    if (!pid) return;
+    getDailyPriceHistory(pid, 30).then((r) => {
+      setDailySeries(Array.isArray(r.data) ? r.data : []);
+    }).catch(() => {});
   }, [product?.id, id]);
 
   if (loading) {
@@ -101,6 +141,7 @@ export default function ProductDetail() {
 
   return (
     <div className="container-tight py-4 sm:py-6 lg:py-8">
+      <ProductSEO product={product} />
       <button
         onClick={() => navigate(-1)}
         className="inline-flex items-center gap-1.5 text-gray hover:text-ink text-sm font-medium mb-4 sm:mb-6 transition-colors"
@@ -190,10 +231,33 @@ export default function ProductDetail() {
                   Buy from {cheapest.siteName} <ExternalLink className="w-4 h-4" />
                 </a>
               )}
-              <button className="btn-ghost">
+              <button
+                onClick={toggleWishlist}
+                disabled={wishlistBusy}
+                className={`btn-ghost ${inWishlist ? 'text-red' : ''}`}
+                title={user ? (inWishlist ? 'Remove from wishlist' : 'Add to wishlist') : 'Sign in to save'}
+              >
+                <Heart className={`w-4 h-4 ${inWishlist ? 'fill-red' : ''}`} />
+                {inWishlist ? 'Saved' : 'Wishlist'}
+              </button>
+              <button
+                onClick={() => {
+                  if (!user) { navigate('/sign-in'); return; }
+                  navigate('/account');
+                }}
+                className="btn-ghost"
+                title="Manage saved searches & alerts"
+              >
                 <Bell className="w-4 h-4" /> Price alert
               </button>
-              <button className="btn-ghost">
+              <button
+                onClick={() => {
+                  const url = window.location.href;
+                  if (navigator.share) navigator.share({ title: product.name, url }).catch(() => {});
+                  else navigator.clipboard?.writeText(url);
+                }}
+                className="btn-ghost"
+              >
                 <Share2 className="w-4 h-4" /> Share
               </button>
             </div>
@@ -231,7 +295,7 @@ export default function ProductDetail() {
         {activeTab === 'prices' && (
           <PriceComparisonTable prices={product.prices || []} productId={product.id || id} />
         )}
-        {activeTab === 'history' && <PriceHistoryChart history={history} />}
+        {activeTab === 'history' && <PriceHistoryChart history={history} dailySeries={dailySeries} />}
       </div>
     </div>
   );

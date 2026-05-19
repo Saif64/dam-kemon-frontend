@@ -190,43 +190,43 @@ lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#ro
 
 | | Item |
 |---|---|
-| ⬜ | Live "X searching now" pill on Home (polls `/api/stats/live` every 5s) |
-| ⬜ | Trending searches strip — top 10 queries with high CTR in the last 24h |
-| ⬜ | "Hot drops" rail — products with the biggest price drop in last 7 days |
-| ⬜ | "Recently viewed" rail for returning visitors (localStorage anon-id) |
-| ⬜ | Anonymous event beacons (`search`, `view`, `click` → backend events collection) |
+| ✅ | Live "X searching now" pill on Home — `LiveActivityPill` polls `/api/stats/live` |
+| ✅ | Trending searches strip — `TrendingStrip`, hides itself when <3 queries exist |
+| ✅ | "Hot drops" rail — `HotDropsRail`, products with the biggest price drop in last 7 days |
+| ✅ | "Recently viewed" rail for returning visitors (localStorage product-id stack) |
+| ✅ | Anonymous event beacons via `sendBeacon` — `search`, `view`, `click` |
 
-### Phase 3 — admin console (separate `/admin` SPA)
+### Phase 3 — admin console at `/admin`
 
 | | Item |
 |---|---|
-| ⬜ | Sign-in screen exchanging `X-Admin-Key` for a session cookie |
-| ⬜ | Indexer dashboard: live progress (SSE), per-shop status grid, wipe/reindex buttons |
-| ⬜ | Shop manager — CRUD on the catalog without redeploying |
-| ⬜ | Catalog browser — paginated grid, click → edit (rename, fix category, merge duplicates) |
-| ⬜ | Search log — last 1k queries with `totalResults`, clickable to re-run |
-| ⬜ | Cache + scheduler controls (flush, enable/disable jobs) |
-| ⬜ | Live counters: DAU, MAU, searches/day, CTR per shop, no-result search leaderboard |
+| ✅ | Sign-in flow (magic-link → 30d JWT). Non-admins redirected to `/account`. |
+| ✅ | Indexer dashboard — live status, "run nightly", "retry failed", "discover shops" |
+| ✅ | Shop manager — health badge, recent runs, manual reindex, enable/disable |
+| ✅ | Pending shops review queue — approve/reject, promotes to live catalog |
+| ✅ | Audit log — every admin endpoint hit with actor + status |
+| ✅ | Operator stats: DAU/MAU, zero-result leaderboard, CTR per shop, top viewed/clicked |
 
 ### Phase 4 — user accounts
 
 | | Item |
 |---|---|
-| ⬜ | Sign-up / sign-in (Google + email magic link) |
-| ⬜ | Saved searches — notify when results change |
-| ⬜ | Price-drop alerts (email or Telegram) |
-| ⬜ | Wishlist (per-user, cloud-synced) |
+| ✅ | Email-magic-link sign-in (`AuthContext`, `/sign-in`, `/auth/verify`) |
+| ✅ | Saved searches — `/account` tab, backend emails drops daily |
+| ✅ | Price-drop alerts via email (delivered by the saved-search alert cron) |
+| ✅ | Wishlist — heart toggle on ProductDetail + `/account` Wishlist tab |
+| ⬜ | Google OAuth (requires external credentials) |
 
 ### Phase 5 — SEO + performance
 
 | | Item |
 |---|---|
-| ⬜ | Server-render (or SSG via `vite-plugin-ssr`) product detail pages so Google indexes them |
-| ⬜ | Generate `/sitemap.xml` of our own catalog |
-| ⬜ | Open Graph image generator per product (so shared links preview right) |
-| ⬜ | Schema.org `Product` JSON-LD on our pages |
-| ⬜ | Code-split the bundle (current 700KB JS is fine for dev, not for first paint) |
-| ⬜ | Image CDN / on-the-fly resize for product images |
+| ⬜ | Server-render product detail pages (would replace JSON-LD-in-JS with crawl-friendly HTML) |
+| ✅ | `/sitemap.xml` of every product page (served by the backend) |
+| ⬜ | Open Graph image generator per product |
+| ✅ | Schema.org `Product` JSON-LD injected via `ProductSEO` |
+| ✅ | Code-split bundle via `React.lazy()` on every non-hot-path route |
+| ✅ | Image proxy with cache-control headers (replaces hot-link-blocked CDN paths) |
 
 ### UI / UX polish backlog
 
