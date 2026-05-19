@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 
 const statusConfig = {
-  active: { color: 'text-green', bg: 'bg-green-soft', dot: 'bg-green', label: 'Active' },
-  slow:   { color: 'text-yellow', bg: 'bg-yellow-soft', dot: 'bg-yellow', label: 'Slow' },
-  down:   { color: 'text-red', bg: 'bg-red-soft', dot: 'bg-red', label: 'Down' },
+  active:  { color: 'text-green', bg: 'bg-green-soft',  dot: 'bg-green',  label: 'Active' },
+  slow:    { color: 'text-yellow', bg: 'bg-yellow-soft', dot: 'bg-yellow', label: 'Slow' },
+  dormant: { color: 'text-gray', bg: 'bg-cream-soft',    dot: 'bg-gray',   label: 'Dormant' },
+  down:    { color: 'text-red', bg: 'bg-red-soft',       dot: 'bg-red',    label: 'Down' },
 };
 
 const ChartTooltip = ({ active, payload, label }) => {

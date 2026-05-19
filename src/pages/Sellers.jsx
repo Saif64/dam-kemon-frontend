@@ -152,8 +152,20 @@ export default function Sellers() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-cream-soft mb-4">
             <Store className="w-8 h-8 text-ink/30" />
           </div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">No sellers match</h2>
-          <p className="text-gray text-sm">Try clearing some filters.</p>
+          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">
+            {sellers.length === 0 ? 'F-commerce coming soon' : 'No sellers match'}
+          </h2>
+          <p className="text-gray text-sm max-w-md mx-auto">
+            {sellers.length === 0 ? (
+              <>
+                Most Bangladesh F-commerce sellers live on Facebook with no structured catalog.
+                We're working on a "submit your shop" flow so verified FB sellers can list their
+                products manually. For now, browse our <Link to="/" className="text-ink underline">60-shop website catalog</Link>.
+              </>
+            ) : (
+              <>Try clearing some filters.</>
+            )}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
