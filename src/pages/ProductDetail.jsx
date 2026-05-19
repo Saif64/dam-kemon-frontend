@@ -110,8 +110,14 @@ export default function ProductDetail() {
             ) : (
               <span className="font-serif text-7xl sm:text-8xl italic text-ink/10">{(product.category || 'P')[0]}</span>
             )}
-            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 inline-flex items-center gap-1 bg-white/90 backdrop-blur text-ink text-[10px] sm:text-[11px] font-mono uppercase tracking-wider px-2 py-1 rounded-full">
-              <Sparkles className="w-3 h-3 text-yellow" /> Live from search
+            {/* Seller-count badge — the cross-shop value prop, prominent */}
+            <div className={`absolute bottom-3 left-3 sm:bottom-4 sm:left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold ${
+              sellerCount > 1
+                ? 'bg-green text-white shadow-[0_4px_12px_-2px_rgba(15,77,42,0.4)]'
+                : 'bg-white/95 text-ink/70 border border-line backdrop-blur'
+            }`}>
+              <Sparkles className="w-3 h-3" />
+              {sellerCount === 0 ? 'No sellers' : sellerCount === 1 ? '1 seller' : `${sellerCount} sellers compared`}
             </div>
           </div>
 
@@ -132,21 +138,25 @@ export default function ProductDetail() {
               </p>
             )}
 
-            {(product.averageRating || product.totalReviews) && (
-              <div className="flex items-center gap-2 sm:gap-3 mb-5 flex-wrap">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < Math.round(product.averageRating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
-                  ))}
-                </div>
-                {product.averageRating != null && (
+            <div className="flex items-center gap-2 sm:gap-3 mb-5 flex-wrap">
+              {product.averageRating > 0 ? (
+                <>
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < Math.round(product.averageRating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
+                    ))}
+                  </div>
                   <span className="text-ink font-semibold text-sm">{Number(product.averageRating).toFixed(1)}</span>
-                )}
-                {product.totalReviews != null && (
-                  <span className="text-gray text-xs sm:text-sm">({product.totalReviews} reviews)</span>
-                )}
-              </div>
-            )}
+                  {product.totalReviews > 0 && (
+                    <span className="text-gray text-xs sm:text-sm">
+                      ({Number(product.totalReviews).toLocaleString('en-IN')} {product.totalReviews === 1 ? 'review' : 'reviews'} across all sellers)
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-gray text-xs sm:text-sm">No reviews aggregated yet</span>
+              )}
+            </div>
 
             <div className="rounded-2xl bg-gradient-to-br from-cream-soft to-white border border-line p-3 sm:p-4 mb-4">
               <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
