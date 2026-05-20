@@ -39,13 +39,7 @@ api.interceptors.response.use(
   }
 );
 
-export const requestMagicLink = (email) =>
-  api.post('/auth/request-link', { email });
-
-export const verifyMagicLink = (email, token) =>
-  api.post('/auth/verify', { email, token });
-
-/** Fixed-credential owner sign-in. Issues the same JWT as magic-link. */
+/** Fixed-credential owner sign-in. Issues a 30-day JWT. */
 export const passwordLogin = (username, password) =>
   api.post('/auth/login', { username, password });
 

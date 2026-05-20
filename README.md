@@ -200,7 +200,7 @@ lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#ro
 
 | | Item |
 |---|---|
-| ✅ | Sign-in flow (magic-link → 30d JWT). Non-admins redirected to `/account`. |
+| ✅ | Sign-in flow (owner username + password → 30d JWT). Non-admins redirected to `/account`. |
 | ✅ | Indexer dashboard — live status, "run nightly", "retry failed", "discover shops" |
 | ✅ | Shop manager — health badge, recent runs, manual reindex, enable/disable |
 | ✅ | Pending shops review queue — approve/reject, promotes to live catalog |
@@ -211,10 +211,8 @@ lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#ro
 
 | | Item |
 |---|---|
-| ✅ | Owner sign-in (fixed username/password) on `/sign-in` Password tab |
-| ✅ | Magic-link sign-in for regular users — Magic link tab on `/sign-in` |
-| ✅ | Saved searches — `/account` tab, backend emails drops daily |
-| ✅ | Price-drop alerts via email (delivered by the saved-search alert cron) |
+| ✅ | Owner sign-in (fixed username/password) on `/sign-in` — only auth path |
+| ✅ | Saved searches — `/account` tab |
 | ✅ | Wishlist — heart toggle on ProductDetail + `/account` Wishlist tab |
 | ✅ | Per-user search history on `/account` History tab |
 

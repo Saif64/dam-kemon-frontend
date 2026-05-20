@@ -18,7 +18,6 @@ const Sellers = lazy(() => import('./pages/Sellers'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SubmitShop = lazy(() => import('./pages/SubmitShop'));
 const SignIn = lazy(() => import('./pages/SignIn'));
-const AuthVerify = lazy(() => import('./pages/AuthVerify'));
 const Account = lazy(() => import('./pages/Account'));
 const FcommerceSignup = lazy(() => import('./pages/FcommerceSignup'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
@@ -57,7 +56,6 @@ function App() {
                 <Route path="/submit-shop" element={<SubmitShop />} />
                 <Route path="/fcommerce/signup" element={<FcommerceSignup />} />
                 <Route path="/sign-in" element={<SignIn />} />
-                <Route path="/auth/verify" element={<AuthVerify />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<AdminLayout />}>
