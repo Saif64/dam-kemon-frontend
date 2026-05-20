@@ -15,7 +15,14 @@ export default function ProductSEO({ product }) {
 
     const title = `${product.name} — Dam Kemon`;
     const description = (product.description || `Compare ${product.name} prices across Bangladesh shops`).slice(0, 240);
-    const image = product.imageUrl || '';
+    const apiBase = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      : (typeof window !== 'undefined' ? window.location.origin : '');
+    // Server-rendered 1200×630 PNG for FB/WhatsApp/Twitter previews. Falls
+    // back to the product image if the OG generator isn't available.
+    const image = product.id
+      ? `${apiBase}/api/og/product/${product.id}.png`
+      : (product.imageUrl || '');
     const url = typeof window !== 'undefined' ? window.location.href : '';
 
     const prevTitle = document.title;

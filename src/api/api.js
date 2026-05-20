@@ -96,4 +96,42 @@ export const getProductsByIds = (ids) =>
 export const getDailyPriceHistory = (id, days = 30) =>
   api.get(`/products/${id}/history/daily`, { params: { days } });
 
+// ─── Admin: indexer history ───
+export const getIndexerHistory = (limit = 30) =>
+  api.get('/admin/index/history', { params: { limit } });
+
+// ─── Admin: shop edit ───
+export const editShop = (slug, patch) =>
+  api.patch(`/admin/shops/${encodeURIComponent(slug)}`, patch);
+export const bulkSetShopStatus = (slugs, status) =>
+  api.post('/admin/shops/bulk-status', { slugs, status });
+
+// ─── Admin: catalog ───
+export const adminListCatalog = (params = {}) =>
+  api.get('/admin/catalog', { params });
+export const adminEditProduct = (id, patch) =>
+  api.patch(`/admin/catalog/${id}`, patch);
+export const adminDeleteProduct = (id) =>
+  api.delete(`/admin/catalog/${id}`);
+export const adminMergeProducts = (toId, fromId) =>
+  api.post(`/admin/catalog/${toId}/merge`, { from: fromId });
+
+// ─── Admin: cache ───
+export const listCaches = () => api.get('/admin/cache');
+export const flushCache = (name) => api.post(`/admin/cache/${name}/flush`);
+export const flushAllCaches = () => api.post('/admin/cache/flush-all');
+
+// ─── Admin: jobs ───
+export const listJobs = () => api.get('/admin/jobs');
+export const runJob = (id) => api.post(`/admin/jobs/${id}/run`);
+export const jobRuns = (id) => api.get(`/admin/jobs/${id}/runs`);
+
+// ─── Admin: search log + latency ───
+export const recentSearches = (limit = 200) =>
+  api.get('/admin/stats/recent-searches', { params: { limit } });
+export const searchLatency = () => api.get('/admin/stats/latency');
+
+// ─── Account: per-user search history ───
+export const accountSearchHistory = () => api.get('/account/search-history');
+
 export default api;

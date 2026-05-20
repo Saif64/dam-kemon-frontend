@@ -5,8 +5,9 @@ import {
   listSavedSearches, addSavedSearch, removeSavedSearch,
   listWishlist, removeFromWishlist,
 } from '../api/auth';
+import { accountSearchHistory } from '../api/api';
 import {
-  User as UserIcon, Bell, Heart, LogOut, Plus, X, ArrowRight, Search as SearchIcon,
+  User as UserIcon, Bell, Heart, LogOut, Plus, X, ArrowRight, Search as SearchIcon, History,
 } from 'lucide-react';
 
 function fmt(p) { if (p == null) return 'N/A'; return '৳' + Number(p).toLocaleString('en-IN'); }
@@ -59,10 +60,14 @@ export default function Account() {
         <TabBtn active={tab === 'wishlist'} onClick={() => setTab('wishlist')} icon={Heart}>
           Wishlist
         </TabBtn>
+        <TabBtn active={tab === 'history'} onClick={() => setTab('history')} icon={History}>
+          History
+        </TabBtn>
       </div>
 
       {tab === 'saved-searches' && <SavedSearchesTab />}
       {tab === 'wishlist' && <WishlistTab />}
+      {tab === 'history' && <HistoryTab />}
     </div>
   );
 }
@@ -160,6 +165,41 @@ function SavedSearchesTab() {
         </ul>
       )}
     </div>
+  );
+}
+
+function HistoryTab() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    accountSearchHistory()
+      .then((r) => setItems(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p className="text-gray text-sm">Loading…</p>;
+  if (!items.length) {
+    return (
+      <div className="text-center py-12 card-soft">
+        <History className="w-10 h-10 text-ink/20 mx-auto mb-3" />
+        <p className="text-gray text-sm">No searches recorded yet.</p>
+        <p className="text-gray text-xs mt-1">We only keep your history when you're signed in.</p>
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-1">
+      {items.map((h, i) => (
+        <li key={i} className="flex items-center justify-between py-2 border-b border-line/50">
+          <Link to={`/search?q=${encodeURIComponent(h.query)}`} className="text-sm hover:text-red truncate">{h.query}</Link>
+          <span className="text-[11px] text-gray font-mono ml-2 whitespace-nowrap">
+            {h.resultCount ?? 0} results · {new Date(h.ts).toLocaleDateString()}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

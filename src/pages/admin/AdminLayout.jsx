@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { Shield, Database, Store, Inbox, BarChart3, FileText, LogOut } from 'lucide-react';
+import { Shield, Database, Store, Inbox, BarChart3, FileText, LogOut, Package, Search as SearchIcon, Clock, HardDrive } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, ready, signOut } = useAuth();
@@ -38,7 +38,11 @@ export default function AdminLayout() {
         <Tab to="/admin/indexer" icon={Database}>Indexer</Tab>
         <Tab to="/admin/shops" icon={Store}>Shops</Tab>
         <Tab to="/admin/pending-shops" icon={Inbox}>Pending</Tab>
+        <Tab to="/admin/catalog" icon={Package}>Catalog</Tab>
+        <Tab to="/admin/search-log" icon={SearchIcon}>Search log</Tab>
         <Tab to="/admin/stats" icon={BarChart3}>Stats</Tab>
+        <Tab to="/admin/cache" icon={HardDrive}>Cache</Tab>
+        <Tab to="/admin/jobs" icon={Clock}>Jobs</Tab>
         <Tab to="/admin/audit" icon={FileText}>Audit log</Tab>
       </nav>
 

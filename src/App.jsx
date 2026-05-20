@@ -26,6 +26,10 @@ const AdminShops = lazy(() => import('./pages/admin/AdminShops'));
 const AdminPendingShops = lazy(() => import('./pages/admin/AdminPendingShops'));
 const AdminAuditLog = lazy(() => import('./pages/admin/AdminAuditLog'));
 const AdminStats = lazy(() => import('./pages/admin/AdminStats'));
+const AdminCatalog = lazy(() => import('./pages/admin/AdminCatalog'));
+const AdminSearchLog = lazy(() => import('./pages/admin/AdminSearchLog'));
+const AdminCache = lazy(() => import('./pages/admin/AdminCache'));
+const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'));
 
 function PageFallback() {
   return (
@@ -60,7 +64,11 @@ function App() {
                   <Route path="indexer" element={<AdminIndexer />} />
                   <Route path="shops" element={<AdminShops />} />
                   <Route path="pending-shops" element={<AdminPendingShops />} />
+                  <Route path="catalog" element={<AdminCatalog />} />
+                  <Route path="search-log" element={<AdminSearchLog />} />
                   <Route path="stats" element={<AdminStats />} />
+                  <Route path="cache" element={<AdminCache />} />
+                  <Route path="jobs" element={<AdminJobs />} />
                   <Route path="audit" element={<AdminAuditLog />} />
                 </Route>
               </Routes>
