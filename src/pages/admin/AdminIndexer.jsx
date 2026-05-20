@@ -57,22 +57,42 @@ export default function AdminIndexer() {
         )}
       </section>
 
-      <section className="card-soft p-5 sm:p-6 space-y-3">
-        <h2 className="font-serif text-xl font-semibold">Actions</h2>
-        <div className="flex flex-wrap gap-2">
-          <ActionBtn icon={Play} onClick={() => handle('Full reindex', () => triggerReindex())} busy={busy === 'Full reindex'}>
-            Run nightly indexer now
-          </ActionBtn>
-          <ActionBtn icon={RotateCcw} onClick={() => handle('Retry pass', () => retryFailedShops())} busy={busy === 'Retry pass'}>
-            Retry failed shops
-          </ActionBtn>
-          <ActionBtn icon={SearchIcon} onClick={() => handle('Shop discovery', () => api.post('/admin/discover-shops'))} busy={busy === 'Shop discovery'}>
-            Discover new shops
-          </ActionBtn>
-          <ActionBtn icon={SearchIcon} onClick={() => handle('Hot-drops rebuild', () => api.post('/admin/hot-drops/rebuild'))} busy={busy === 'Hot-drops rebuild'}>
-            Rebuild hot drops
-          </ActionBtn>
+      <section className="card-soft p-5 sm:p-6 space-y-4">
+        <div>
+          <h2 className="font-serif text-xl font-semibold mb-1">Manual scrape</h2>
+          <p className="text-sm text-gray">
+            Nightly auto-runs at 03:00. Use this button any time you want a fresh crawl right now —
+            it walks every active shop, refreshes prices, and writes new products into the catalog.
+          </p>
         </div>
+        <button
+          onClick={() => handle('Manual scrape', () => triggerReindex())}
+          disabled={busy === 'Manual scrape' || status?.inProgress}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-red text-white font-semibold text-base hover:bg-ink disabled:opacity-50 disabled:cursor-wait transition-colors w-full sm:w-auto"
+        >
+          <Play className="w-4 h-4" />
+          {status?.inProgress
+            ? 'Scrape in progress…'
+            : busy === 'Manual scrape'
+              ? 'Starting…'
+              : 'Scrape every shop now'}
+        </button>
+
+        <div className="border-t border-line pt-4">
+          <h3 className="font-serif text-base font-semibold mb-2">Other actions</h3>
+          <div className="flex flex-wrap gap-2">
+            <ActionBtn icon={RotateCcw} onClick={() => handle('Retry pass', () => retryFailedShops())} busy={busy === 'Retry pass'}>
+              Retry failed shops only
+            </ActionBtn>
+            <ActionBtn icon={SearchIcon} onClick={() => handle('Shop discovery', () => api.post('/admin/discover-shops'))} busy={busy === 'Shop discovery'}>
+              Discover new shops
+            </ActionBtn>
+            <ActionBtn icon={SearchIcon} onClick={() => handle('Hot-drops rebuild', () => api.post('/admin/hot-drops/rebuild'))} busy={busy === 'Hot-drops rebuild'}>
+              Rebuild hot drops
+            </ActionBtn>
+          </div>
+        </div>
+
         {msg && (
           <p className={`inline-flex items-center gap-1.5 text-xs ${msg.ok ? 'text-green' : 'text-red'}`}>
             {msg.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}

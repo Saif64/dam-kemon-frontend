@@ -1,17 +1,49 @@
-import { useEffect } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { Shield, Database, Store, Inbox, BarChart3, FileText, LogOut, Package, Search as SearchIcon, Clock, HardDrive } from 'lucide-react';
+import { triggerReindex, indexStatus } from '../../api/api';
+import {
+  Shield, Database, Store, Inbox, BarChart3, FileText, LogOut, Package,
+  Search as SearchIcon, Clock, HardDrive, Play, Loader2, CheckCircle2,
+} from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, ready, signOut } = useAuth();
   const navigate = useNavigate();
+  const [running, setRunning] = useState(false);
+  const [justStarted, setJustStarted] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
     if (!user) navigate('/sign-in', { replace: true });
     else if (user.role !== 'admin') navigate('/account', { replace: true });
   }, [ready, user, navigate]);
+
+  // Poll the indexer so the header chip reflects what's happening even if you
+  // kicked it off on a different tab.
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+    const tick = () =>
+      indexStatus()
+        .then((r) => setRunning(Boolean(r.data?.inProgress)))
+        .catch(() => {});
+    tick();
+    const t = setInterval(tick, 5000);
+    return () => clearInterval(t);
+  }, [user]);
+
+  const scrapeNow = async () => {
+    if (running) return;
+    if (!confirm('Kick off a full nightly indexer run right now? This will take 30–90 minutes.')) return;
+    try {
+      await triggerReindex();
+      setRunning(true);
+      setJustStarted(true);
+      setTimeout(() => setJustStarted(false), 4000);
+    } catch (e) {
+      alert(e.response?.data?.error || 'Could not start the indexer.');
+    }
+  };
 
   if (!ready) return <div className="container-tight py-16 text-center text-gray">Loading…</div>;
   if (!user || user.role !== 'admin') return null;
@@ -24,6 +56,32 @@ export default function AdminLayout() {
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold leading-none">Admin</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={scrapeNow}
+            disabled={running}
+            className={`inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
+              running
+                ? 'bg-green/15 text-green cursor-wait'
+                : justStarted
+                  ? 'bg-green text-white'
+                  : 'bg-ink text-cream hover:bg-red'
+            }`}
+            title="Trigger a full indexer run now (otherwise runs nightly at 03:00)"
+          >
+            {running ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Scraping…
+              </>
+            ) : justStarted ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Started
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5" /> Scrape now
+              </>
+            )}
+          </button>
           <span className="text-xs text-gray hidden sm:inline">{user.email}</span>
           <button
             onClick={() => { signOut(); navigate('/'); }}
