@@ -35,6 +35,45 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+/*
+ * Dark theme overrides. The toggle on the navbar sets data-theme="dark"
+ * on <html>. Tailwind utility classes that reference --color-cream /
+ * --color-surface / etc. flip automatically; hard-coded hex in JSX stays
+ * unchanged but the canvas around it inverts.
+ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-cream: #15131A;
+  --color-cream-soft: #1F1C26;
+  --color-surface: #1C1A22;
+  --color-surface-alt: #16141B;
+  --color-ink: #F5F0E5;
+  --color-ink-soft: #C7C0B5;
+  --color-red: #FF6F50;
+  --color-red-soft: #4A1F18;
+  --color-lime: #C5E544;
+  --color-lime-soft: #2A331A;
+  --color-green: #4CC275;
+  --color-green-soft: #1A2D1F;
+  --color-yellow: #FFDF6B;
+  --color-yellow-soft: #3A2F12;
+  --color-blue: #6BA8FF;
+  --color-blue-soft: #1A2335;
+  --color-gray: #A8A8A8;
+  --color-gray-soft: #767676;
+  --color-line: rgba(245, 240, 229, 0.10);
+  --color-line-strong: rgba(245, 240, 229, 0.18);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.40), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45), 0 10px 30px -10px rgba(0, 0, 0, 0.50);
+  --shadow-lift: 0 8px 24px -8px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Tone down stark white image backgrounds so dark mode doesn't feel patchy. */
+html[data-theme="dark"] img {
+  filter: brightness(0.92);
 }
 
 body {

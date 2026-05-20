@@ -45,6 +45,10 @@ export const requestMagicLink = (email) =>
 export const verifyMagicLink = (email, token) =>
   api.post('/auth/verify', { email, token });
 
+/** Fixed-credential owner sign-in. Issues the same JWT as magic-link. */
+export const passwordLogin = (username, password) =>
+  api.post('/auth/login', { username, password });
+
 export const getMe = () => api.get('/auth/me');
 
 export const signOut = () => api.post('/auth/sign-out');

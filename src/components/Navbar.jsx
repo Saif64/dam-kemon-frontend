@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, BarChart3, Sparkles, User as UserIcon, Shield } from 'lucide-react';
+import { Search, Menu, X, BarChart3, Sparkles, User as UserIcon, Shield, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { getTheme, toggleTheme } from '../api/theme';
 
 export default function Navbar() {
   const [query, setQuery] = useState('');
@@ -9,6 +10,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [theme, setTheme] = useState(getTheme());
+  const flipTheme = () => setTheme(toggleTheme());
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -87,6 +90,14 @@ export default function Navbar() {
                   className="w-44 lg:w-56 pl-10 pr-3 py-2.5 bg-white border border-line rounded-full text-sm text-ink placeholder-gray-soft focus:outline-none focus:border-ink/40 focus:w-60 lg:focus:w-72 focus:shadow-[0_0_0_4px_rgba(21,19,26,0.04)] transition-all"
                 />
               </form>
+              <button
+                onClick={flipTheme}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-cream transition-colors text-ink/70 hover:text-ink"
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
               {user ? (
                 <>
                   {user.role === 'admin' && (
@@ -182,6 +193,12 @@ export default function Navbar() {
                   <span className="text-gray-soft text-xl">→</span>
                 </button>
               )}
+              <button onClick={flipTheme} className="px-4 py-3.5 text-left text-ink hover:bg-white rounded-2xl text-[15px] font-medium flex items-center justify-between">
+                <span className="inline-flex items-center gap-2">
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </span>
+              </button>
             </div>
             <Link
               to="/dashboard"

@@ -153,19 +153,28 @@ export default function Sellers() {
             <Store className="w-8 h-8 text-ink/30" />
           </div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink mb-2">
-            {sellers.length === 0 ? 'F-commerce coming soon' : 'No sellers match'}
+            {sellers.length === 0 ? 'No sellers listed yet' : 'No sellers match'}
           </h2>
-          <p className="text-gray text-sm max-w-md mx-auto">
+          <p className="text-gray text-sm max-w-md mx-auto mb-4">
             {sellers.length === 0 ? (
               <>
                 Most Bangladesh F-commerce sellers live on Facebook with no structured catalog.
-                We're working on a "submit your shop" flow so verified FB sellers can list their
-                products manually. For now, browse our <Link to="/" className="text-ink underline">60-shop website catalog</Link>.
+                If you run one, list yours below and we'll surface your inventory next to the big shops.
               </>
             ) : (
               <>Try clearing some filters.</>
             )}
           </p>
+          {sellers.length === 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link to="/fcommerce/signup" className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-ink text-cream text-sm font-semibold hover:bg-red transition-colors">
+                List your shop
+              </Link>
+              <Link to="/" className="inline-flex items-center gap-1 px-4 py-2 rounded-full border border-line text-ink text-sm font-semibold hover:border-ink transition-colors">
+                Browse catalog
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

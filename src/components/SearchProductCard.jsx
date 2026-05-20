@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight } from 'lucide-react';
+import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale } from 'lucide-react';
 import { trackClick } from '../api/analytics';
+import { toggle, inQueue, subscribe } from '../api/compareQueue';
 
 function fmt(p) {
   if (p == null) return 'N/A';
@@ -26,6 +28,8 @@ function hostOf(url) {
  * the unit of value, not any single seller.
  */
 export default function SearchProductCard({ product, rank }) {
+  const [staged, setStaged] = useState(inQueue(product.id));
+  useEffect(() => subscribe(() => setStaged(inQueue(product.id))), [product.id]);
   const prices = Array.isArray(product.prices) ? [...product.prices] : [];
   prices.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
   const cheapest = prices[0];
@@ -67,6 +71,16 @@ export default function SearchProductCard({ product, rank }) {
               <Crown className="w-3 h-3 text-yellow" /> Best match
             </div>
           )}
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id); }}
+            className={`absolute top-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-full backdrop-blur transition-colors ${
+              staged ? 'bg-lime text-ink shadow-[0_4px_12px_-2px_rgba(190,242,100,0.6)]' : 'bg-white/90 text-ink/60 hover:text-ink'
+            }`}
+            title={staged ? 'Remove from compare' : 'Add to compare'}
+            aria-label="Toggle compare"
+          >
+            <Scale className="w-3.5 h-3.5" />
+          </button>
           {/* Headline seller badge — the cross-shop value prop */}
           <div className={`absolute bottom-2 left-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold ${
             isMulti

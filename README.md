@@ -211,11 +211,12 @@ lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#ro
 
 | | Item |
 |---|---|
-| ✅ | Email-magic-link sign-in (`AuthContext`, `/sign-in`, `/auth/verify`) |
+| ✅ | Owner sign-in (fixed username/password) on `/sign-in` Password tab |
+| ✅ | Magic-link sign-in for regular users — Magic link tab on `/sign-in` |
 | ✅ | Saved searches — `/account` tab, backend emails drops daily |
 | ✅ | Price-drop alerts via email (delivered by the saved-search alert cron) |
 | ✅ | Wishlist — heart toggle on ProductDetail + `/account` Wishlist tab |
-| ⬜ | Google OAuth (requires external credentials) |
+| ✅ | Per-user search history on `/account` History tab |
 
 ### Phase 5 — SEO + performance
 
@@ -232,12 +233,12 @@ lives in the [backend README](https://github.com/DolfinMind/dam-kemon-backend#ro
 
 | | Item |
 |---|---|
-| ⬜ | Compare page wired to the new product-centric model (drag products from search into Compare) |
-| ⬜ | Empty-state illustrations (Sellers page, "no results" search) |
-| ⬜ | Dark mode toggle |
+| ✅ | Compare page wired to the new product-centric model — toggle Compare on any SearchProductCard, floating `CompareBar` queues up to 4 products and jumps to `/compare` |
+| ✅ | Empty-state polish (Sellers + "no results" search both link to next action) |
+| ✅ | Dark mode toggle in the navbar — persists to localStorage, respects `prefers-color-scheme` on first load |
 | ⬜ | Mobile bottom-sheet for "All sellers" instead of horizontal scroll |
-| ⬜ | Skeleton loaders that match the new card shape |
-| ⬜ | Locale toggle (English / বাংলা) |
+| ✅ | Skeleton loaders shaped like the new card (`SearchProductCardSkeleton`) used on SearchResults |
+| ⬜ | Locale toggle (English / বাংলা) — requires string extraction, not yet wired |
 
 ---
 

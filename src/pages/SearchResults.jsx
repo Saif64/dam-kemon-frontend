@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { searchProducts } from '../api/api';
 import SearchProductCard from '../components/SearchProductCard';
 import { SkeletonRow } from '../components/LoadingSpinner';
+import SearchProductCardSkeleton from '../components/SearchProductCardSkeleton';
 import {
   Search, ArrowUpDown, ArrowLeft, Sparkles, TrendingDown,
   TrendingUp, Equal, AlertTriangle, RefreshCw,
@@ -240,7 +241,7 @@ export default function SearchResults() {
       {/* Content */}
       {loading ? (
         <div className="space-y-2.5 sm:space-y-3">
-          {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+          {[...Array(4)].map((_, i) => <SearchProductCardSkeleton key={i} />)}
         </div>
       ) : error ? (
         <div className="card-soft p-8 sm:p-10 text-center">
