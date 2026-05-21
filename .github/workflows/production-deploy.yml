@@ -1,0 +1,61 @@
+name: Deploy Frontend to Production
+
+on:
+  push:
+    branches:
+      - deployment-prod
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_ENV_LABEL: production
+
+      - name: Copy build to temporary directory on server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.SERVER_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "dist/*"
+          target: "/home/${{ vars.SERVER_USER }}/frontend-temp/"
+          strip_components: 1
+
+      - name: Deploy frontend to web root
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.SERVER_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Create deployment path if it does not exist
+            sudo mkdir -p ${{ vars.FRONTEND_PROD_DEPLOY_PATH }}
+            
+            # Clean up current files in the deployment folder
+            sudo rm -rf ${{ vars.FRONTEND_PROD_DEPLOY_PATH }}/*
+            
+            # Move files from temp path to deployment folder
+            sudo mv /home/${{ vars.SERVER_USER }}/frontend-temp/* ${{ vars.FRONTEND_PROD_DEPLOY_PATH }}/
+            
+            # Remove temp directory
+            sudo rm -rf /home/${{ vars.SERVER_USER }}/frontend-temp
+            
+            # Ensure correct permissions
+            sudo chown -R www-data:www-data ${{ vars.FRONTEND_PROD_DEPLOY_PATH }}
