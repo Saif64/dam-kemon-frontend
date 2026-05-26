@@ -56,3 +56,33 @@ export const removeSavedSearch = (id) => api.delete(`/account/saved-searches/${i
 export const listWishlist = () => api.get('/account/wishlist');
 export const addToWishlist = (productId) => api.post('/account/wishlist', { productId });
 export const removeFromWishlist = (productId) => api.delete(`/account/wishlist/${productId}`);
+
+/**
+ * Patch the alert settings for a single watched product. Body may include
+ * any of: targetPrice, alertOnDropPercent (0..1), notifyChannel, alertsEnabled.
+ */
+export const updateWishlistAlert = (productId, patch) =>
+  api.patch(`/account/wishlist/${productId}`, patch);
+
+/** In-app notification feed for the bell dropdown. */
+export const listNotifications = (limit = 20) =>
+  api.get('/account/notifications', { params: { limit } });
+
+export const markNotificationsRead = () =>
+  api.post('/account/notifications/read');
+
+// ─── Saathi: FB-commerce seller toolkit ───
+export const saathiSignup = (payload) => api.post('/saathi/signup', payload);
+export const saathiMe = () => api.get('/saathi/me');
+export const saathiUpdate = (patch) => api.patch('/saathi/me', patch);
+export const saathiSubmitVerification = (payload) => api.post('/saathi/verify', payload);
+export const saathiListProducts = () => api.get('/saathi/products');
+export const saathiAttachProduct = (productId, listedPrice, note) =>
+  api.post('/saathi/products', { productId, listedPrice, note });
+export const saathiDetachProduct = (productId) =>
+  api.delete(`/saathi/products/${encodeURIComponent(productId)}`);
+export const saathiLiveAssist = (q) => api.get('/saathi/live-assist', { params: { q } });
+export const saathiRecentQueries = (limit = 30) =>
+  api.get('/saathi/queries', { params: { limit } });
+export const saathiPublicProfile = (slug) =>
+  api.get(`/saathi/p/${encodeURIComponent(slug)}`);

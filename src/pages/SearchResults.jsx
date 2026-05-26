@@ -6,7 +6,7 @@ import { SkeletonRow } from '../components/LoadingSpinner';
 import SearchProductCardSkeleton from '../components/SearchProductCardSkeleton';
 import {
   Search, ArrowUpDown, ArrowLeft, Sparkles, TrendingDown,
-  TrendingUp, Equal, AlertTriangle, RefreshCw,
+  TrendingUp, Equal, AlertTriangle, RefreshCw, Lightbulb,
 } from 'lucide-react';
 
 const filterOptions = [
@@ -54,6 +54,8 @@ export default function SearchResults() {
           detectedCategory: data.detectedCategory,
           brands: data.brands ?? [],
           confidence: data.confidence,
+          didYouMean: data.didYouMean,
+          sponsoredProductIds: data.sponsoredProductIds || [],
         });
       })
       .catch((err) => {
@@ -132,6 +134,23 @@ export default function SearchResults() {
           </button>
         </form>
       </div>
+
+      {/* Did-you-mean hint — surfaces when literal search returned nothing
+          and we fell back to fuzzy. Click to re-search with the suggestion. */}
+      {!loading && !error && meta?.didYouMean && meta.didYouMean !== query && (
+        <button
+          onClick={() => setSearchParams({ q: meta.didYouMean })}
+          className="w-full mb-3 inline-flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-yellow-soft border border-yellow text-left hover:bg-yellow/50 transition-colors group"
+        >
+          <span className="inline-flex items-center gap-2 text-sm">
+            <Lightbulb className="w-4 h-4 text-yellow shrink-0" />
+            <span className="text-gray">Did you mean</span>
+            <span className="font-serif italic font-semibold text-ink truncate">{meta.didYouMean}</span>
+            <span className="text-gray">?</span>
+          </span>
+          <span className="text-xs font-mono text-ink group-hover:underline shrink-0">Search this</span>
+        </button>
+      )}
 
       {/* Context */}
       <div className="card-elev p-4 sm:p-5 mb-3 sm:mb-4">
@@ -275,7 +294,13 @@ export default function SearchResults() {
       ) : (
         <div className="space-y-3 sm:space-y-4">
           {sorted.map((p, i) => (
-            <SearchProductCard key={p.id || p.slug || i} product={p} rank={i + 1} />
+            <SearchProductCard
+              key={p.id || p.slug || i}
+              product={p}
+              rank={i + 1}
+              query={query}
+              sponsored={!!meta?.sponsoredProductIds?.includes(p.id)}
+            />
           ))}
         </div>
       )}

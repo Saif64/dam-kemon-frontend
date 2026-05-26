@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import {
   listSavedSearches, addSavedSearch, removeSavedSearch,
-  listWishlist, removeFromWishlist,
+  listWishlist, removeFromWishlist, updateWishlistAlert,
+  listNotifications, markNotificationsRead,
 } from '../api/auth';
 import { accountSearchHistory } from '../api/api';
 import {
-  User as UserIcon, Bell, Heart, LogOut, Plus, X, ArrowRight, Search as SearchIcon, History,
+  User as UserIcon, Bell, Heart, LogOut, Plus, X, ArrowRight, Search as SearchIcon, History, TrendingDown, Inbox,
 } from 'lucide-react';
 
 function fmt(p) { if (p == null) return 'N/A'; return '৳' + Number(p).toLocaleString('en-IN'); }
@@ -15,7 +16,7 @@ function fmt(p) { if (p == null) return 'N/A'; return '৳' + Number(p).toLocale
 export default function Account() {
   const { user, ready, signOut } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('saved-searches');
+  const [tab, setTab] = useState('notifications');
 
   useEffect(() => {
     if (ready && !user) navigate('/sign-in');
@@ -54,17 +55,21 @@ export default function Account() {
       </div>
 
       <div className="flex gap-2 border-b border-line mb-6 overflow-x-auto no-scrollbar">
-        <TabBtn active={tab === 'saved-searches'} onClick={() => setTab('saved-searches')} icon={Bell}>
-          Saved searches
+        <TabBtn active={tab === 'notifications'} onClick={() => setTab('notifications')} icon={Inbox}>
+          Notifications
         </TabBtn>
         <TabBtn active={tab === 'wishlist'} onClick={() => setTab('wishlist')} icon={Heart}>
           Wishlist
+        </TabBtn>
+        <TabBtn active={tab === 'saved-searches'} onClick={() => setTab('saved-searches')} icon={Bell}>
+          Saved searches
         </TabBtn>
         <TabBtn active={tab === 'history'} onClick={() => setTab('history')} icon={History}>
           History
         </TabBtn>
       </div>
 
+      {tab === 'notifications' && <NotificationsTab />}
       {tab === 'saved-searches' && <SavedSearchesTab />}
       {tab === 'wishlist' && <WishlistTab />}
       {tab === 'history' && <HistoryTab />}
@@ -219,6 +224,15 @@ function WishlistTab() {
     catch { /* ignore */ }
   };
 
+  const toggleAlert = async (productId, currentEnabled) => {
+    try {
+      await updateWishlistAlert(productId, { alertsEnabled: !currentEnabled });
+      setItems((xs) => xs.map((x) =>
+        (x.product?.id === productId || x.productId === productId)
+          ? { ...x, alertsEnabled: !currentEnabled } : x));
+    } catch { /* ignore */ }
+  };
+
   if (loading) return <p className="text-gray text-sm">Loading…</p>;
   if (!items.length) {
     return (
@@ -231,37 +245,125 @@ function WishlistTab() {
   }
   return (
     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {items.map((w) => (
-        <li key={w.id} className="card-soft p-3 flex gap-3 items-start">
-          {w.product?.imageUrl && (
-            <img src={w.product.imageUrl} alt={w.product.name} className="w-16 h-16 object-cover rounded-lg shrink-0" />
-          )}
-          <div className="flex-1 min-w-0">
-            {w.product ? (
-              <>
-                <Link to={`/product/${w.product.id || w.product.slug}`} className="block">
-                  <span className="font-serif text-sm font-semibold line-clamp-2 hover:text-red transition-colors">{w.product.name}</span>
-                </Link>
-                <div className="mt-1 inline-flex items-baseline gap-2">
-                  <span className="font-mono text-base font-bold">{fmt(w.product.lowestPrice)}</span>
-                  {w.priceAtAdd && w.product.lowestPrice && w.product.lowestPrice < w.priceAtAdd && (
-                    <span className="text-[11px] text-green font-mono">↓ {fmt(w.priceAtAdd - w.product.lowestPrice)}</span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-gray italic">Product removed from catalog</p>
+      {items.map((w) => {
+        const pid = w.product?.id || w.productId;
+        const dropTarget = w.targetPrice;
+        return (
+          <li key={w.id} className="card-soft p-3 flex gap-3 items-start">
+            {w.product?.imageUrl && (
+              <img src={w.product.imageUrl} alt={w.product.name} className="w-16 h-16 object-cover rounded-lg shrink-0" />
             )}
-          </div>
-          <button
-            onClick={() => remove(w.product?.id || w.productId)}
-            className="shrink-0 p-1.5 rounded-full hover:bg-red/10 hover:text-red text-gray transition-colors"
-            title="Remove"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </li>
-      ))}
+            <div className="flex-1 min-w-0">
+              {w.product ? (
+                <>
+                  <Link to={`/product/${w.product.id || w.product.slug}`} className="block">
+                    <span className="font-serif text-sm font-semibold line-clamp-2 hover:text-red transition-colors">{w.product.name}</span>
+                  </Link>
+                  <div className="mt-1 inline-flex items-baseline gap-2">
+                    <span className="font-mono text-base font-bold">{fmt(w.product.lowestPrice)}</span>
+                    {w.priceAtAdd && w.product.lowestPrice && w.product.lowestPrice < w.priceAtAdd && (
+                      <span className="text-[11px] text-green font-mono">↓ {fmt(w.priceAtAdd - w.product.lowestPrice)}</span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => toggleAlert(pid, w.alertsEnabled)}
+                      className={`inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full transition-colors ${
+                        w.alertsEnabled
+                          ? 'bg-green/15 text-green border border-green/30'
+                          : 'bg-cream-soft text-gray border border-line hover:border-ink hover:text-ink'
+                      }`}
+                    >
+                      <Bell className="w-3 h-3" /> {w.alertsEnabled ? 'Alerts on' : 'Alerts off'}
+                    </button>
+                    {dropTarget && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-ink/5 text-ink/70">
+                        target {fmt(dropTarget)}
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-gray italic">Product removed from catalog</p>
+              )}
+            </div>
+            <button
+              onClick={() => remove(pid)}
+              className="shrink-0 p-1.5 rounded-full hover:bg-red/10 hover:text-red text-gray transition-colors"
+              title="Remove"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+function NotificationsTab() {
+  const [items, setItems] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listNotifications(30)
+      .then((r) => {
+        const data = r.data || {};
+        setItems(Array.isArray(data.items) ? data.items : []);
+        setUnread(data.unread || 0);
+      })
+      .catch(() => { setItems([]); setUnread(0); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const markRead = async () => {
+    try { await markNotificationsRead(); setUnread(0);
+      setItems((xs) => xs.map((n) => ({ ...n, unread: false }))); }
+    catch { /* ignore */ }
+  };
+
+  if (loading) return <p className="text-gray text-sm">Loading…</p>;
+  if (!items.length) {
+    return (
+      <div className="text-center py-12 card-soft">
+        <Inbox className="w-10 h-10 text-ink/20 mx-auto mb-3" />
+        <p className="text-gray text-sm">No notifications yet.</p>
+        <p className="text-gray text-xs mt-1">Turn on alerts on any product to get notified when its price drops.</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      {unread > 0 && (
+        <div className="flex items-center justify-between mb-3 px-1">
+          <span className="text-[12px] text-gray font-mono">{unread} unread</span>
+          <button onClick={markRead} className="text-[12px] font-semibold text-ink hover:text-red transition-colors">Mark all read</button>
+        </div>
+      )}
+      <ul className="space-y-2">
+        {items.map((n) => (
+          <li key={n.id} className={`card-soft p-3 flex items-start gap-3 ${n.unread ? 'border-yellow' : ''}`}>
+            {n.productImageUrl && <img src={n.productImageUrl} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <Link to={`/product/${n.productId}`} className="block">
+                <span className="font-serif text-sm font-semibold line-clamp-1 hover:text-red transition-colors">{n.productName}</span>
+              </Link>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-green font-bold">
+                  <TrendingDown className="w-3 h-3" /> {fmt(n.currentPrice)}
+                </span>
+                {n.priceAtAdd && n.priceAtAdd > n.currentPrice && (
+                  <span className="text-[10px] font-mono text-gray">↓ {fmt(n.priceAtAdd - n.currentPrice)} from your save</span>
+                )}
+                <span className="text-[10px] font-mono text-gray ml-auto">
+                  {n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}
+                </span>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

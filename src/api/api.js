@@ -134,4 +134,20 @@ export const searchLatency = () => api.get('/admin/stats/latency');
 // ─── Account: per-user search history ───
 export const accountSearchHistory = () => api.get('/account/search-history');
 
+/**
+ * Tracked outbound URL for "Visit shop" buttons. The backend records the
+ * click + appends affiliate parameters before 302-ing to the shop. Pass
+ * the search query when known so attribution analytics know what led to
+ * the click.
+ */
+export const affiliateUrl = (productId, siteSlug, fromQuery) => {
+  if (!productId) return '#';
+  const base = `${baseURL}/r/${encodeURIComponent(productId)}`;
+  const params = new URLSearchParams();
+  if (siteSlug) params.set('site', siteSlug);
+  if (fromQuery) params.set('q', fromQuery);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+};
+
 export default api;

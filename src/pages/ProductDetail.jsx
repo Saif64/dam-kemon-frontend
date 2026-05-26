@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getProduct, getProductHistory, getDailyPriceHistory } from '../api/api';
+import { getProduct, getProductHistory, getDailyPriceHistory, affiliateUrl } from '../api/api';
 import { trackView } from '../api/analytics';
 import { pushRecent } from '../api/recentlyViewed';
-import { addToWishlist, removeFromWishlist, listWishlist } from '../api/auth';
+import { addToWishlist, removeFromWishlist, listWishlist, updateWishlistAlert } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
 import PriceComparisonTable from '../components/PriceComparisonTable';
 import PriceHistoryChart from '../components/PriceHistoryChart';
@@ -68,13 +68,28 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const [inWishlist, setInWishlist] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertSettings, setAlertSettings] = useState({
+    alertsEnabled: false,
+    targetPrice: '',
+    alertOnDropPercent: 10,
+  });
 
   useEffect(() => {
     if (!user) { setInWishlist(false); return; }
     const pid = product?.id || id;
     if (!pid) return;
     listWishlist().then((r) => {
-      setInWishlist((r.data || []).some((w) => (w.product?.id || w.productId) === pid));
+      const row = (r.data || []).find((w) => (w.product?.id || w.productId) === pid);
+      setInWishlist(!!row);
+      if (row) {
+        setAlertSettings({
+          alertsEnabled: !!row.alertsEnabled,
+          targetPrice: row.targetPrice ?? '',
+          alertOnDropPercent: row.alertOnDropPercent != null
+            ? Math.round(row.alertOnDropPercent * 100) : 10,
+        });
+      }
     }).catch(() => {});
   }, [user, product?.id, id]);
 
@@ -85,6 +100,34 @@ export default function ProductDetail() {
     try {
       if (inWishlist) { await removeFromWishlist(pid); setInWishlist(false); }
       else { await addToWishlist(pid); setInWishlist(true); }
+    } catch { /* noop */ }
+    finally { setWishlistBusy(false); }
+  };
+
+  const openTrackPrice = async () => {
+    const pid = product?.id || id;
+    if (!pid) return;
+    if (!user) { navigate('/sign-in'); return; }
+    // Add to wishlist first if not already — alerts hang off a wishlist row
+    if (!inWishlist) {
+      try { await addToWishlist(pid); setInWishlist(true); }
+      catch { return; }
+    }
+    setAlertModalOpen(true);
+  };
+
+  const saveAlertSettings = async () => {
+    const pid = product?.id || id;
+    if (!pid) return;
+    setWishlistBusy(true);
+    try {
+      const tp = alertSettings.targetPrice === '' ? null : Number(alertSettings.targetPrice);
+      await updateWishlistAlert(pid, {
+        alertsEnabled: !!alertSettings.alertsEnabled,
+        targetPrice: Number.isFinite(tp) ? tp : null,
+        alertOnDropPercent: Math.max(1, Math.min(50, Number(alertSettings.alertOnDropPercent) || 10)) / 100,
+      });
+      setAlertModalOpen(false);
     } catch { /* noop */ }
     finally { setWishlistBusy(false); }
   };
@@ -227,7 +270,14 @@ export default function ProductDetail() {
 
             <div className="flex flex-wrap gap-2">
               {cheapest && cheapest.productUrl && (
-                <a href={cheapest.productUrl} target="_blank" rel="noopener noreferrer" className="btn-accent flex-1 sm:flex-none">
+                <a
+                  href={(product.id || id)
+                    ? affiliateUrl(product.id || id, cheapest.siteSlug || cheapest.siteName)
+                    : cheapest.productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  className="btn-accent flex-1 sm:flex-none"
+                >
                   Buy from {cheapest.siteName} <ExternalLink className="w-4 h-4" />
                 </a>
               )}
@@ -241,14 +291,12 @@ export default function ProductDetail() {
                 {inWishlist ? 'Saved' : 'Wishlist'}
               </button>
               <button
-                onClick={() => {
-                  if (!user) { navigate('/sign-in'); return; }
-                  navigate('/account');
-                }}
-                className="btn-ghost"
-                title="Manage saved searches & alerts"
+                onClick={openTrackPrice}
+                className={`btn-ghost ${alertSettings.alertsEnabled ? 'text-green' : ''}`}
+                title={alertSettings.alertsEnabled ? 'Edit price drop alert' : 'Notify me when price drops'}
               >
-                <Bell className="w-4 h-4" /> Price alert
+                <Bell className={`w-4 h-4 ${alertSettings.alertsEnabled ? 'fill-green/30' : ''}`} />
+                {alertSettings.alertsEnabled ? 'Tracking' : 'Track price'}
               </button>
               <button
                 onClick={() => {
@@ -297,6 +345,94 @@ export default function ProductDetail() {
         )}
         {activeTab === 'history' && <PriceHistoryChart history={history} dailySeries={dailySeries} />}
       </div>
+
+      {alertModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm p-3 sm:p-6 animate-fade-in"
+          onClick={() => setAlertModalOpen(false)}
+        >
+          <div
+            className="bg-cream rounded-3xl shadow-[var(--shadow-lift)] border border-line-strong w-full max-w-md p-5 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold italic text-ink">Track this price</h3>
+                <p className="text-xs text-gray mt-1">We'll email you the moment it drops.</p>
+              </div>
+              <button
+                onClick={() => setAlertModalOpen(false)}
+                className="p-1.5 -mr-1 rounded-full hover:bg-ink/5 text-gray hover:text-ink"
+                aria-label="Close"
+              >
+                <ArrowLeft className="w-4 h-4 rotate-45" />
+              </button>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer mb-4 px-3 py-2.5 rounded-2xl bg-white border border-line">
+              <input
+                type="checkbox"
+                checked={!!alertSettings.alertsEnabled}
+                onChange={(e) => setAlertSettings((s) => ({ ...s, alertsEnabled: e.target.checked }))}
+                className="mt-0.5 w-4 h-4"
+              />
+              <span className="text-sm">
+                <span className="font-semibold text-ink">Enable price alerts</span>
+                <span className="block text-[11px] text-gray mt-0.5">
+                  Currently lowest: <span className="font-mono">{formatPrice(lowestPrice)}</span>
+                </span>
+              </span>
+            </label>
+
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1.5">
+                  Target price (notify when below)
+                </label>
+                <div className="flex items-center gap-2 bg-white border border-line rounded-2xl px-3 py-2">
+                  <span className="text-gray font-mono">৳</span>
+                  <input
+                    type="number"
+                    value={alertSettings.targetPrice}
+                    onChange={(e) => setAlertSettings((s) => ({ ...s, targetPrice: e.target.value }))}
+                    placeholder={lowestPrice ? Math.round(lowestPrice * 0.9).toString() : 'e.g. 65000'}
+                    className="flex-1 bg-transparent outline-none text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1.5">
+                  Or notify on any drop ≥ <b>{alertSettings.alertOnDropPercent}%</b>
+                </label>
+                <input
+                  type="range"
+                  min="1" max="50" step="1"
+                  value={alertSettings.alertOnDropPercent}
+                  onChange={(e) => setAlertSettings((s) => ({ ...s, alertOnDropPercent: e.target.value }))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAlertModalOpen(false)}
+                className="btn-ghost flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAlertSettings}
+                disabled={wishlistBusy}
+                className="btn-primary flex-1 disabled:opacity-50"
+              >
+                {wishlistBusy ? 'Saving…' : 'Save alert'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

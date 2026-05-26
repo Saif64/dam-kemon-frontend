@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale } from 'lucide-react';
+import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale, Megaphone } from 'lucide-react';
 import { trackClick } from '../api/analytics';
+import { affiliateUrl } from '../api/api';
 import { toggle, inQueue, subscribe } from '../api/compareQueue';
 
 function fmt(p) {
@@ -27,7 +28,7 @@ function hostOf(url) {
  * links are demoted to small chips at the bottom; the card itself is
  * the unit of value, not any single seller.
  */
-export default function SearchProductCard({ product, rank }) {
+export default function SearchProductCard({ product, rank, sponsored = false, query }) {
   const [staged, setStaged] = useState(inQueue(product.id));
   useEffect(() => subscribe(() => setStaged(inQueue(product.id))), [product.id]);
   const prices = Array.isArray(product.prices) ? [...product.prices] : [];
@@ -66,7 +67,11 @@ export default function SearchProductCard({ product, rank }) {
           ) : (
             <span className="font-serif text-5xl italic text-ink/15">{(product.category || 'P')[0]}</span>
           )}
-          {rank === 1 && (
+          {sponsored ? (
+            <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-yellow text-ink px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(0,0,0,0.18)]">
+              <Megaphone className="w-3 h-3" /> Sponsored
+            </div>
+          ) : rank === 1 && (
             <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-ink text-cream px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
               <Crown className="w-3 h-3 text-yellow" /> Best match
             </div>
@@ -175,9 +180,11 @@ export default function SearchProductCard({ product, rank }) {
               return (
                 <a
                   key={`${sp.siteSlug || sp.siteName}-${i}`}
-                  href={sp.productUrl || '#'}
+                  href={product.id
+                    ? affiliateUrl(product.id, sp.siteSlug || sp.siteName, query)
+                    : (sp.productUrl || '#')}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer sponsored"
                   onClick={(e) => {
                     e.stopPropagation();
                     trackClick(product.id, sp.siteSlug || sp.siteName);

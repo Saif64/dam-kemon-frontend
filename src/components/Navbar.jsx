@@ -38,6 +38,7 @@ export default function Navbar() {
     { to: '/',          label: 'Home' },
     { to: '/compare',   label: 'Compare' },
     { to: '/sellers',   label: 'Sellers' },
+    { to: '/saathi',    label: 'For sellers' },
     { to: '/dashboard', label: 'Dashboard' },
   ];
 

@@ -20,6 +20,9 @@ const SubmitShop = lazy(() => import('./pages/SubmitShop'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const Account = lazy(() => import('./pages/Account'));
 const FcommerceSignup = lazy(() => import('./pages/FcommerceSignup'));
+const Saathi = lazy(() => import('./pages/Saathi'));
+const SaathiDashboard = lazy(() => import('./pages/SaathiDashboard'));
+const SaathiProfile = lazy(() => import('./pages/SaathiProfile'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminIndexer = lazy(() => import('./pages/admin/AdminIndexer'));
 const AdminShops = lazy(() => import('./pages/admin/AdminShops'));
@@ -55,6 +58,9 @@ function App() {
                 <Route path="/sellers" element={<Sellers />} />
                 <Route path="/submit-shop" element={<SubmitShop />} />
                 <Route path="/fcommerce/signup" element={<FcommerceSignup />} />
+                <Route path="/saathi" element={<Saathi />} />
+                <Route path="/saathi/dashboard" element={<SaathiDashboard />} />
+                <Route path="/p/:slug" element={<SaathiProfile />} />
                 <Route path="/sign-in" element={<SignIn />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/dashboard" element={<Dashboard />} />

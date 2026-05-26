@@ -1,5 +1,6 @@
 import { ExternalLink, Star, Check, Truck, Crown, Award } from 'lucide-react';
 import { trackClick } from '../api/analytics';
+import { affiliateUrl } from '../api/api';
 
 function formatPrice(price) {
   if (!price && price !== 0) return 'N/A';
@@ -118,9 +119,11 @@ export default function PriceComparisonTable({ prices = [], productId }) {
                   <div className="font-mono text-[10px] sm:text-xs text-gray-soft line-through">{formatPrice(item.originalPrice)}</div>
                 )}
                 <a
-                  href={item.productUrl || '#'}
+                  href={productId
+                    ? affiliateUrl(productId, item.siteSlug || item.siteName)
+                    : (item.productUrl || '#')}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer sponsored"
                   className={`inline-flex items-center gap-1 mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
                     isLowest
                       ? 'bg-ink text-cream hover:bg-red'
