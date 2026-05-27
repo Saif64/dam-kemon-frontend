@@ -1,28 +1,33 @@
-// Tiny theme switcher. Reads `prefers-color-scheme` on first load, then
-// persists the user's choice in localStorage. The actual styling lives in
-// index.css via `html[data-theme="dark"]` overrides.
+// Theme switcher — temporarily LIGHT-ONLY.
+//
+// The dark palette was inverting from the cream/ink light tokens 1:1 which
+// produced muddy contrast on every component we'd actually styled for
+// light: pricing cards, sponsored chips, the F-commerce hero gradient,
+// comparison tables. Rather than ship a half-broken dark mode we pin to
+// light until we can redesign dark properly (Notion/Stripe Atlas style
+// warm-dark greys, NOT a token flip).
+//
+// To re-enable dark mode:
+//   1. Restore the getTheme + toggleTheme logic from git history
+//      (commit f20a44e on deployment-prod).
+//   2. Uncomment the `html[data-theme="dark"]` block in src/index.css.
+//   3. Un-hide the moon/sun toggle button in src/components/Navbar.jsx
+//      (look for `THEME_TOGGLE_DISABLED`).
 
 const KEY = 'dk_theme';
 
 export function getTheme() {
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === 'light' || saved === 'dark') return saved;
-  } catch { /* private mode */ }
-  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
-  }
   return 'light';
 }
 
-export function applyTheme(theme) {
+export function applyTheme(/* theme */) {
   if (typeof document === 'undefined') return;
-  document.documentElement.setAttribute('data-theme', theme);
-  try { localStorage.setItem(KEY, theme); } catch { /* */ }
+  document.documentElement.setAttribute('data-theme', 'light');
+  try { localStorage.setItem(KEY, 'light'); } catch { /* */ }
 }
 
 export function toggleTheme() {
-  const next = getTheme() === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  return next;
+  // No-op while dark is disabled.
+  applyTheme('light');
+  return 'light';
 }

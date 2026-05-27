@@ -39,11 +39,17 @@ html {
 }
 
 /*
- * Dark theme overrides. The toggle on the navbar sets data-theme="dark"
- * on <html>. Tailwind utility classes that reference --color-cream /
- * --color-surface / etc. flip automatically; hard-coded hex in JSX stays
- * unchanged but the canvas around it inverts.
- */
+ * Dark theme — DISABLED for now. The contrast across our shop tables,
+ * sponsored chips, F-commerce hero gradients and pricing cards never
+ * came together; rather than ship a half-broken dark mode we're
+ * holding it back until we can reimagine the palette properly
+ * (probably: warm dark greys + amber/cream accents, mirroring the
+ * Notion/Stripe Atlas aesthetic rather than inverting the light
+ * tokens 1:1).
+ *
+ * Kept in source so re-enabling is a single block uncomment + revert
+ * of the toggle hide in Navbar.jsx + theme.js.
+ *
 html[data-theme="dark"] {
   color-scheme: dark;
   --color-cream: #15131A;
@@ -71,10 +77,10 @@ html[data-theme="dark"] {
   --shadow-lift: 0 8px 24px -8px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* Tone down stark white image backgrounds so dark mode doesn't feel patchy. */
 html[data-theme="dark"] img {
   filter: brightness(0.92);
 }
+*/
 
 body {
   font-family: var(--font-sans);
