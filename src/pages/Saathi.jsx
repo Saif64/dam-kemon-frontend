@@ -69,9 +69,12 @@ export default function Saathi() {
             </Link>
           ) : (
             <>
-              <button onClick={() => user ? setShowSignup(true) : navigate('/sign-in')} className="btn-primary">
+              {/* /saathi/signup is the proper, shareable URL. SaathiSignup
+                  itself handles the not-signed-in path with a ?next= round-trip
+                  through /sign-in so we don't fork that logic here. */}
+              <Link to="/saathi/signup" className="btn-primary">
                 Start free 14-day trial <ArrowRight className="w-4 h-4" />
-              </button>
+              </Link>
               <a href="#how" className="btn-ghost">See how it works</a>
             </>
           )}

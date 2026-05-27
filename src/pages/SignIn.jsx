@@ -1,21 +1,29 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { passwordLogin } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
 import { ArrowLeft, AlertCircle, KeyRound } from 'lucide-react';
 
 /**
  * Sole sign-in path: owner enters username + password, server returns a
- * 30-day JWT, we land them on /admin (or /account for non-admins, though
- * in practice the owner is the only user).
+ * 30-day JWT. After success we honor a {@code ?next=...} query param so
+ * pages that gate behind auth (e.g. /saathi/signup) can round-trip the
+ * user back to themselves. Falls back to /admin for admin role, /account
+ * otherwise.
  */
 export default function SignIn() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [search] = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  // Whitelist next= targets — only relative paths starting with "/" to
+  // prevent open-redirect attacks via ?next=https://evil.com.
+  const rawNext = search.get('next');
+  const next = (rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : null;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +32,11 @@ export default function SignIn() {
     try {
       const r = await passwordLogin(username, password);
       signIn(r.data.token, r.data.user);
-      navigate(r.data.user?.role === 'admin' ? '/admin' : '/account');
+      if (next) {
+        navigate(next);
+      } else {
+        navigate(r.data.user?.role === 'admin' ? '/admin' : '/account');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Could not sign in. Check your username and password.');
     } finally {

@@ -57,7 +57,10 @@ export default function SaathiDashboard() {
     if (!user) return;
     saathiMe()
       .then((r) => setAcc(r.data))
-      .catch((e) => { if (e.response?.status === 404) navigate('/saathi'); })
+      // 404 → no Saathi account yet → send straight to the signup form,
+      // not the marketing page. Was redirecting to /saathi (landing),
+      // which made the journey opaque ("where do I sign up?").
+      .catch((e) => { if (e.response?.status === 404) navigate('/saathi/signup', { replace: true }); })
       .finally(() => setLoading(false));
     reloadStats();
     reloadProductCount();
