@@ -8,15 +8,19 @@ import {
 } from 'lucide-react';
 
 const CITY_FILTERS = ['All', 'Dhaka', 'Chittagong'];
+// Category IDs match the lowercase strings the sellers seed + Saathi
+// signup write to the DB (e.g. "smartphone", not "SMARTPHONE"). Mismatch
+// here was previously hiding every seller from filtered views.
 const CATEGORY_FILTERS = [
-  { id: '',           label: 'All'        },
-  { id: 'SMARTPHONE', label: 'Phones'     },
-  { id: 'FASHION',    label: 'Fashion'    },
-  { id: 'BEAUTY',     label: 'Beauty'     },
-  { id: 'BOOK',       label: 'Books'      },
-  { id: 'AC',         label: 'AC / Fridge'},
-  { id: 'KITCHEN',    label: 'Kitchen'    },
-  { id: 'SPORTS',     label: 'Sports'     },
+  { id: '',            label: 'All'         },
+  { id: 'smartphone',  label: 'Phones'      },
+  { id: 'fashion',     label: 'Fashion'     },
+  { id: 'beauty',      label: 'Beauty'      },
+  { id: 'book',        label: 'Books'       },
+  { id: 'appliance',   label: 'Appliances'  },
+  { id: 'grocery',     label: 'Grocery'     },
+  { id: 'furniture',   label: 'Furniture'   },
+  { id: 'laptop',      label: 'Laptops'     },
 ];
 
 const avatarColors = ['#1877F2', '#FF4521', '#0F4D2A', '#FFD23F', '#7B61FF', '#15131A'];
@@ -72,8 +76,21 @@ export default function Sellers() {
           Facebook <em className="text-blue">sellers</em> across Bangladesh
         </h1>
         <p className="text-gray text-sm sm:text-base mt-2 max-w-2xl">
-          Verified shops we track from Facebook pages, marketplaces, and Messenger DMs — with seller rating, COD info, and one-tap message.
+          Curated BD F-commerce shops with Facebook, Messenger, or WhatsApp
+          presence. Verified entries have passed Damkemon's identity and
+          refund-history checks.
         </p>
+        {/* Always show the "list your shop" CTA so the directory grows
+            organically. The Saathi link is the high-leverage path; the
+            free Submit-shop form is the low-friction one. */}
+        <div className="mt-4 inline-flex flex-wrap gap-2">
+          <Link to="/saathi" className="btn-primary text-sm">
+            <BadgeCheck className="w-4 h-4" /> List my shop on Saathi
+          </Link>
+          <Link to="/submit-shop" className="btn-ghost text-sm">
+            <Store className="w-4 h-4" /> Or submit a free listing
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
