@@ -87,3 +87,11 @@ export const saathiRecentQueries = (limit = 30) =>
 export const saathiStats = () => api.get('/saathi/stats');
 export const saathiPublicProfile = (slug) =>
   api.get(`/saathi/p/${encodeURIComponent(slug)}`);
+
+// ─── Saathi: Messenger bot connection ───
+export const saathiConnectMessenger = (pageId, pageAccessToken) =>
+  api.post('/saathi/messenger/connect', { pageId, pageAccessToken });
+export const saathiDisconnectMessenger = () =>
+  api.post('/saathi/messenger/disconnect');
+export const saathiTestBot = (q) =>
+  api.get('/saathi/messenger/test', { params: { q } });
