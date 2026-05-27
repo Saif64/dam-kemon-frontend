@@ -34,27 +34,71 @@ export default function AdminIndexer() {
     <div className="space-y-6">
       <section className="card-soft p-5 sm:p-6">
         <h2 className="font-serif text-xl font-semibold mb-1">Latest run</h2>
-        {status?.startedAtEpochMs ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
-            <Stat label="Shops" value={`${status.shopsSucceeded}/${status.shopsAttempted}`} hint={status.shopsFailed > 0 ? `${status.shopsFailed} failed` : null} />
-            <Stat label="URLs scraped" value={status.urlsScraped?.toLocaleString() ?? '—'} />
-            <Stat label="Inserted" value={status.productsInserted?.toLocaleString() ?? '—'} />
-            <Stat label="Merged" value={status.productsMerged?.toLocaleString() ?? '—'} />
-          </div>
-        ) : (
-          <p className="text-sm text-gray mt-2">No runs yet — kick one off below.</p>
-        )}
-        {status?.inProgress && (
-          <div className="mt-4 text-xs font-mono inline-flex items-center gap-2 text-green">
-            <span className="w-2 h-2 rounded-full bg-green animate-pulse" /> Running…
-          </div>
-        )}
-        {status?.finishedAtEpochMs > 0 && !status?.inProgress && (
-          <p className="mt-3 text-[11px] text-gray">
-            Finished {new Date(status.finishedAtEpochMs).toLocaleString()}
-            {' '} · took {Math.round((status.finishedAtEpochMs - status.startedAtEpochMs) / 1000)}s
-          </p>
-        )}
+        {(() => {
+          // /index/status only knows about the run in the CURRENT JVM lifetime
+          // (it's an in-memory RunSummary). After every backend restart that
+          // resets to zero — which is why "No runs yet" was showing even
+          // when Run history clearly listed 3 completed runs. Fall back to
+          // the most recent persisted IndexerRunRecord when status is empty.
+          const inMemory = status?.startedAtEpochMs > 0;
+          const persisted = (!inMemory && history.length > 0) ? history[0] : null;
+
+          if (!inMemory && !persisted) {
+            return <p className="text-sm text-gray mt-2">No runs yet — kick one off below.</p>;
+          }
+
+          const view = inMemory ? {
+            shopsAttempted: status.shopsAttempted,
+            shopsSucceeded: status.shopsSucceeded,
+            shopsFailed: status.shopsFailed,
+            urlsScraped: status.urlsScraped,
+            productsInserted: status.productsInserted,
+            productsMerged: status.productsMerged,
+            finishedAtMs: status.finishedAtEpochMs,
+            startedAtMs: status.startedAtEpochMs,
+            source: status.inProgress ? 'running' : 'this-session',
+          } : {
+            shopsAttempted: persisted.shopsAttempted,
+            shopsSucceeded: persisted.shopsSucceeded,
+            shopsFailed: persisted.shopsFailed,
+            urlsScraped: persisted.urlsScraped,
+            productsInserted: persisted.productsInserted,
+            productsMerged: persisted.productsMerged,
+            finishedAtMs: persisted.finishedAt ? new Date(persisted.finishedAt).getTime() : 0,
+            startedAtMs: persisted.startedAt ? new Date(persisted.startedAt).getTime() : 0,
+            source: 'persisted',
+            kind: persisted.kind,
+            tookSeconds: persisted.tookSeconds,
+          };
+
+          return (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+                <Stat label="Shops" value={`${view.shopsSucceeded}/${view.shopsAttempted}`}
+                      hint={view.shopsFailed > 0 ? `${view.shopsFailed} failed` : null} />
+                <Stat label="URLs scraped" value={view.urlsScraped?.toLocaleString() ?? '—'} />
+                <Stat label="Inserted" value={view.productsInserted?.toLocaleString() ?? '—'} />
+                <Stat label="Merged" value={view.productsMerged?.toLocaleString() ?? '—'} />
+              </div>
+              {status?.inProgress && (
+                <div className="mt-4 text-xs font-mono inline-flex items-center gap-2 text-green">
+                  <span className="w-2 h-2 rounded-full bg-green animate-pulse" /> Running…
+                </div>
+              )}
+              {!status?.inProgress && view.finishedAtMs > 0 && (
+                <p className="mt-3 text-[11px] text-gray">
+                  {view.source === 'persisted' && (
+                    <span className="inline-flex items-center gap-1 mr-2 px-1.5 py-0.5 rounded-full bg-cream-soft border border-line text-[10px] font-mono uppercase tracking-wider">
+                      {view.kind || 'past'}
+                    </span>
+                  )}
+                  Finished {new Date(view.finishedAtMs).toLocaleString()}
+                  {' '} · took {view.tookSeconds ?? Math.round((view.finishedAtMs - view.startedAtMs) / 1000)}s
+                </p>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       <section className="card-soft p-5 sm:p-6 space-y-4">
