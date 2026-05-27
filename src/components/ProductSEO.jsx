@@ -73,11 +73,14 @@ export default function ProductSEO({ product }) {
         seller: { '@type': 'Organization', name: p.siteName },
       })),
     };
-    if (product.averageRating > 0) {
+    // Only emit aggregateRating when there's a real rating AND review count.
+    // The previous `|| 1` fallback was fabricating a review where there were
+    // none — Google flags that as spammy structured data.
+    if (product.averageRating > 0 && product.totalReviews > 0) {
       ld.aggregateRating = {
         '@type': 'AggregateRating',
         ratingValue: product.averageRating,
-        reviewCount: product.totalReviews || 1,
+        reviewCount: product.totalReviews,
       };
     }
     const script = document.createElement('script');

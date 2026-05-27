@@ -155,7 +155,7 @@ function VerificationStrip({ acc, onUpdated }) {
         <ShieldCheck className="w-5 h-5 text-ink shrink-0 mt-0.5" />
         <div className="flex-1">
           <p className="text-sm font-semibold text-ink">Get verified to unlock the trust badge</p>
-          <p className="text-xs text-gray mt-0.5">Submit your NID + Trade License (one is enough). Our team reviews within 48 hours. Verified shops convert 2x better.</p>
+          <p className="text-xs text-gray mt-0.5">Submit your NID + Trade License (one is enough). Our team reviews within 48 hours. Verified shops get priority placement in the Sellers directory.</p>
         </div>
         <button onClick={() => setOpen(true)} className="btn-primary text-xs whitespace-nowrap">Start</button>
       </div>

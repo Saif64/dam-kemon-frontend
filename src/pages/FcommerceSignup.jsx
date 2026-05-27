@@ -89,7 +89,7 @@ export default function FcommerceSignup() {
             <input
               type="text" required value={form.name} maxLength={80}
               onChange={(e) => upd('name', e.target.value)}
-              className="input-base" placeholder="e.g. Gadget Lounge BD"
+              className="input-base" placeholder="Your shop's display name"
             />
           </Field>
 

@@ -100,29 +100,30 @@ export default function Saathi() {
         />
       </div>
 
-      {/* How it pays */}
+      {/* What you actually get */}
       <div className="card-elev p-5 sm:p-7 mb-10">
         <h2 className="font-serif text-2xl sm:text-3xl font-bold italic text-ink mb-1">
-          How a shop earns ৳50k+ a month with Saathi
+          What Saathi gives your shop
         </h2>
         <p className="text-ink/65 text-sm mb-5">
-          The math F-commerce shop owners run before signing up.
+          Three concrete tools, on day one. No fabricated conversion claims —
+          the value you get depends on how you use them.
         </p>
         <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <PathStep n="1" title="Faster replies = more sales">
-            Auto-reply within 5 seconds. BD F-commerce conversion goes from
-            ~3% (manual) to ~8% (instant). On 500 messages/month at ৳3,000 avg
-            order → <b>+৳75,000/mo</b>.
+          <PathStep n="1" title="Reply in seconds, not hours">
+            The Messenger bot answers "দাম কত?" within seconds, 24/7. Your
+            competitors take hours. Faster replies close more sales — exactly
+            how many depends on your funnel.
           </PathStep>
-          <PathStep n="2" title="Smarter pricing on Live">
-            See exactly how much undercut competitors. Pricing within ৳200 of
-            cheapest brings 30-40% more buyers. On a typical 2-hour stream that's
-            roughly <b>৳15,000 more revenue</b>.
+          <PathStep n="2" title="Quote prices live on stream">
+            During FB Live, type the product → see what every competitor is
+            charging side-by-side. Quote a smarter price on the spot instead
+            of guessing.
           </PathStep>
-          <PathStep n="3" title="Trust badge keeps buyers">
-            Verified pages convert 2x better than unverified ones (we benchmarked).
-            With 200 messages/day, that's the same revenue at half the ad spend —
-            roughly <b>৳20,000/mo saved on FB ads</b>.
+          <PathStep n="3" title="Earn the trust badge">
+            Pass identity + refund-history verification → get a Damkemon
+            Verified badge for your FB cover. Buyers trust badged sellers
+            more, especially first-time visitors.
           </PathStep>
         </ol>
       </div>
@@ -168,7 +169,7 @@ export default function Saathi() {
             <Field label="Shop name *">
               <input value={form.displayName}
                      onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-                     placeholder="e.g. Gadget Lounge BD" className="input" />
+                     placeholder="Your shop's display name" className="input" />
             </Field>
             <Field label="Facebook page URL">
               <input value={form.facebookUrl}

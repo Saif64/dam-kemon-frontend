@@ -81,12 +81,20 @@ export default function PriceComparisonTable({ prices = [], productId }) {
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${i < 4 ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
-                  ))}
-                  <span className="text-[10px] sm:text-[11px] text-gray ml-0.5 font-mono">4.0</span>
-                </div>
+                {/* Rating row — only render when the shop actually has one.
+                    Earlier this hard-coded 4 yellow stars + "4.0" on every
+                    seller, which is fake data the user wanted gone. */}
+                {item.rating != null && item.rating > 0 && (
+                  <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${i < Math.round(item.rating) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
+                    ))}
+                    <span className="text-[10px] sm:text-[11px] text-gray ml-0.5 font-mono">{Number(item.rating).toFixed(1)}</span>
+                    {item.reviewCount > 0 && (
+                      <span className="text-[10px] sm:text-[11px] text-gray-soft ml-1">({item.reviewCount})</span>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-1.5">
                   {isLowest && (

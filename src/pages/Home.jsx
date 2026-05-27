@@ -212,7 +212,7 @@ export default function Home() {
                 </p>
                 <p className="text-ink/75 text-sm sm:text-[15px] leading-relaxed max-w-md mb-5">
                   Quote smart prices on FB Live. Auto-reply to "দাম কত?" in
-                  Messenger. Earn the verified badge that doubles your conversion.
+                  Messenger. Earn the verified badge that builds buyer trust.
                   ৳999/mo. 14 days free.
                 </p>
                 <div className="flex flex-wrap gap-3">
