@@ -34,12 +34,15 @@ export default function Navbar() {
     }
   };
 
+  // Center nav stays compact (4 items) — "Dashboard" lives as a CTA button
+  // on the right so we don't double-up. The "Sell with us" link is our
+  // entry point into the Saathi seller toolkit; keep it visible because it
+  // funnels merchants who'd otherwise never find the dashboard signup.
   const navLinks = [
     { to: '/',          label: 'Home' },
     { to: '/compare',   label: 'Compare' },
-    { to: '/sellers',   label: 'Sellers' },
-    { to: '/saathi',    label: 'For sellers' },
-    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/sellers',   label: 'Shops' },
+    { to: '/saathi',    label: 'Sell with us' },
   ];
 
   const handleNavClick = (to) => {
@@ -66,13 +69,15 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Center nav (desktop) */}
-            <div className="hidden lg:flex items-center gap-1 bg-white/60 backdrop-blur border border-line rounded-full px-1.5 py-1.5">
+            {/* Center nav (desktop) — surface bg + line-strong border auto-flip
+                with the theme; the prior bg-white/60 was literal white so it
+                rendered as a washed-out grey pill in dark mode. */}
+            <div className="hidden lg:flex items-center gap-1 bg-cream-soft border border-line-strong rounded-full px-1.5 py-1.5 shadow-[var(--shadow-soft)]">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
                   onClick={() => handleNavClick(link.to)}
-                  className="text-ink/70 hover:text-ink hover:bg-cream text-sm font-medium transition-colors px-3.5 py-1.5 rounded-full"
+                  className="text-ink/75 hover:text-ink hover:bg-cream text-sm font-medium transition-colors px-3.5 py-1.5 rounded-full"
                 >
                   {link.label}
                 </button>

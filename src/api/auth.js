@@ -84,5 +84,6 @@ export const saathiDetachProduct = (productId) =>
 export const saathiLiveAssist = (q) => api.get('/saathi/live-assist', { params: { q } });
 export const saathiRecentQueries = (limit = 30) =>
   api.get('/saathi/queries', { params: { limit } });
+export const saathiStats = () => api.get('/saathi/stats');
 export const saathiPublicProfile = (slug) =>
   api.get(`/saathi/p/${encodeURIComponent(slug)}`);

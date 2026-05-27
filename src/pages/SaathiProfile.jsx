@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { saathiPublicProfile } from '../api/auth';
 import {
-  ShieldCheck, MapPin, MessageSquare, Phone, ExternalLink, Star, ArrowLeft,
+  ShieldCheck, MapPin, MessageSquare, Phone, ExternalLink, Star, ArrowLeft, Store, TrendingDown,
 } from 'lucide-react';
+
+function fmt(p) {
+  if (p == null) return '—';
+  return '৳' + Number(p).toLocaleString('en-IN');
+}
 
 /**
  * Public storefront page for a Saathi seller — what their FB-page badge
@@ -115,8 +120,54 @@ export default function SaathiProfile() {
         )}
       </div>
 
+      {/* Products grid — what the seller actually offers. */}
+      {profile.products?.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Store className="w-4 h-4 text-ink/55" />
+            <h2 className="font-mono text-[11px] uppercase tracking-wider text-ink/55">
+              {profile.products.length} {profile.products.length === 1 ? 'product' : 'products'} listed
+            </h2>
+          </div>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            {profile.products.map((p) => {
+              const diff = p.listedPrice != null && p.marketLowest != null ? p.listedPrice - p.marketLowest : null;
+              return (
+                <li key={p.id}>
+                  <Link to={`/product/${p.id || p.slug}`} className="card-soft block overflow-hidden hover:shadow-[var(--shadow-card)] transition-shadow">
+                    {p.imageUrl ? (
+                      <div className="aspect-square bg-cream-soft overflow-hidden">
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                      </div>
+                    ) : (
+                      <div className="aspect-square bg-cream-soft flex items-center justify-center">
+                        <span className="font-serif text-3xl italic text-ink/15">{(p.category || 'P')[0]}</span>
+                      </div>
+                    )}
+                    <div className="p-2.5">
+                      <h3 className="font-serif text-[13px] font-semibold text-ink line-clamp-2 mb-1.5 leading-snug">{p.name}</h3>
+                      <div className="flex items-baseline justify-between gap-1">
+                        <span className="font-mono text-sm font-bold text-ink">{fmt(p.listedPrice)}</span>
+                        {diff != null && diff < 0 && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-mono text-green font-bold">
+                            <TrendingDown className="w-3 h-3" /> {fmt(-diff)} below
+                          </span>
+                        )}
+                      </div>
+                      {p.inStock === false && (
+                        <span className="text-[10px] font-mono text-red mt-1 block">Out of stock</span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="text-center mt-6">
-        <Link to="/saathi" className="text-xs text-gray hover:text-ink inline-flex items-center gap-1">
+        <Link to="/saathi" className="text-xs text-ink/55 hover:text-ink inline-flex items-center gap-1">
           <ShieldCheck className="w-3 h-3" /> What is Damkemon Verified?
         </Link>
       </div>

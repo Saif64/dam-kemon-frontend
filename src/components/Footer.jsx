@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Sparkles, Code2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -26,18 +26,10 @@ export default function Footer() {
           <nav className="flex flex-wrap items-center gap-3 sm:gap-5">
             <Link to="/" className="text-cream/70 hover:text-cream text-sm transition-colors">Home</Link>
             <Link to="/compare" className="text-cream/70 hover:text-cream text-sm transition-colors">Compare</Link>
-            <Link to="/sellers" className="text-cream/70 hover:text-cream text-sm transition-colors">Sellers</Link>
+            <Link to="/sellers" className="text-cream/70 hover:text-cream text-sm transition-colors">Shops</Link>
+            <Link to="/saathi" className="text-cream/70 hover:text-cream text-sm transition-colors">Sell with us</Link>
             <Link to="/submit-shop" className="text-cream/70 hover:text-cream text-sm transition-colors">Submit shop</Link>
-            <Link to="/fcommerce/signup" className="text-cream/70 hover:text-cream text-sm transition-colors">List FB shop</Link>
             <Link to="/dashboard" className="text-cream/70 hover:text-cream text-sm transition-colors">Dashboard</Link>
-            <a
-              href="https://github.com/Saif64/dam-kemon-backend"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-cream/70 hover:text-cream text-sm transition-colors"
-            >
-              <Code2 className="w-3.5 h-3.5" /> Source
-            </a>
           </nav>
         </div>
 

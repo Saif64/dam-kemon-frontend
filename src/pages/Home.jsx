@@ -6,7 +6,10 @@ import LiveActivityPill from '../components/LiveActivityPill';
 import TrendingStrip from '../components/TrendingStrip';
 import HotDropsRail from '../components/HotDropsRail';
 import RecentlyViewedRail from '../components/RecentlyViewedRail';
-import { Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown } from 'lucide-react';
+import {
+  Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown,
+  Radio, MessageSquare, Globe, X, Check, BadgeCheck, Languages, Bell, ShoppingBag,
+} from 'lucide-react';
 
 function fmt(p) {
   if (p == null) return 'N/A';
@@ -142,6 +145,95 @@ export default function Home() {
         </section>
       )}
 
+      {/* Why Damkemon vs the rest — positioning copy. Google Shopping is the
+          obvious comparison every buyer + investor will make, so we address
+          it head-on. The advantages listed are real and BD-specific. */}
+      <section className="container-tight py-10 sm:py-14 lg:py-18">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="tag-bar mb-2 mx-auto">Why Damkemon</div>
+          <h2 className="font-serif font-semibold text-[clamp(1.5rem,4vw,2.5rem)] leading-tight tracking-tight text-ink">
+            Built for Bangladesh.<br className="sm:hidden" />
+            <em className="text-red"> Better than Google Shopping.</em>
+          </h2>
+        </div>
+        <div className="card-elev overflow-hidden">
+          <div className="grid grid-cols-3 text-[12px] sm:text-sm font-mono uppercase tracking-wider bg-cream-soft border-b border-line">
+            <div className="px-3 sm:px-5 py-3 text-ink/55">Feature</div>
+            <div className="px-3 sm:px-5 py-3 text-ink font-bold inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red"></span> Damkemon
+            </div>
+            <div className="px-3 sm:px-5 py-3 text-ink/55">Google Shopping</div>
+          </div>
+          {[
+            { label: '60+ BD shops indexed nightly',          dk: true,  gs: false },
+            { label: 'Bangla + English search (typo-tolerant)', dk: true,  gs: false },
+            { label: 'Facebook & Messenger sellers',          dk: true,  gs: false },
+            { label: 'COD + bKash signals on each listing',   dk: true,  gs: false },
+            { label: 'Price-drop alerts (email + bell)',      dk: true,  gs: false },
+            { label: 'Verified seller trust badge',           dk: true,  gs: false },
+            { label: 'Saathi tools for shop owners',          dk: true,  gs: false },
+            { label: 'Global product coverage',               dk: false, gs: true  },
+          ].map((row, i) => (
+            <div key={i} className={`grid grid-cols-3 text-sm border-b border-line last:border-0 ${i % 2 === 0 ? 'bg-surface' : 'bg-cream-soft/40'}`}>
+              <div className="px-3 sm:px-5 py-3 text-ink">{row.label}</div>
+              <div className="px-3 sm:px-5 py-3 inline-flex items-center gap-1.5">
+                {row.dk ? <Check className="w-4 h-4 text-green" /> : <X className="w-4 h-4 text-ink/30" />}
+                <span className={row.dk ? 'text-ink font-semibold' : 'text-ink/40'}>{row.dk ? 'Yes' : 'No'}</span>
+              </div>
+              <div className="px-3 sm:px-5 py-3 inline-flex items-center gap-1.5">
+                {row.gs ? <Check className="w-4 h-4 text-ink/50" /> : <X className="w-4 h-4 text-ink/30" />}
+                <span className="text-ink/55">{row.gs ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Saathi cross-sell — primary funnel for the seller side of the
+          two-sided marketplace. Placed after "why us" so visitors who came
+          for shopping see we also serve them as sellers. */}
+      <section className="relative overflow-hidden">
+        <div className="container-tight py-10 sm:py-14 lg:py-18">
+          <div className="rounded-3xl bg-gradient-to-br from-yellow-soft via-cream-soft to-lime-soft border border-line-strong p-6 sm:p-10 lg:p-14 relative overflow-hidden">
+            <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-red/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-12 w-72 h-72 rounded-full bg-lime/20 blur-3xl pointer-events-none" />
+
+            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-center">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink text-cream text-[10px] font-mono font-bold uppercase tracking-wider mb-3">
+                  <Sparkles className="w-3 h-3 text-yellow" /> New
+                </span>
+                <h2 className="font-serif text-[clamp(1.6rem,4.2vw,2.75rem)] font-bold italic leading-[1.05] tracking-tight text-ink mb-2">
+                  Run an FB shop?<br />
+                  Meet your <span className="text-red">Saathi</span>.
+                </h2>
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink/55 mb-4">
+                  A seller's companion
+                </p>
+                <p className="text-ink/75 text-sm sm:text-[15px] leading-relaxed max-w-md mb-5">
+                  Quote smart prices on FB Live. Auto-reply to "দাম কত?" in
+                  Messenger. Earn the verified badge that doubles your conversion.
+                  ৳999/mo. 14 days free.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/saathi" className="btn-primary">
+                    Open my Saathi shop <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link to="/saathi#how" className="btn-ghost">See how it works</Link>
+                </div>
+              </div>
+
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <SaathiFeatureChip icon={Radio} title="Live price assist" tone="bg-red-soft text-red" />
+                <SaathiFeatureChip icon={MessageSquare} title="Messenger auto-reply" tone="bg-blue-soft text-blue" />
+                <SaathiFeatureChip icon={BadgeCheck} title="Verified badge" tone="bg-lime-soft text-green" />
+                <SaathiFeatureChip icon={ShoppingBag} title="Public storefront" tone="bg-yellow-soft text-ink" />
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-ink text-cream py-14 sm:py-20 lg:py-28 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-red/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-lime/10 blur-3xl pointer-events-none" />
@@ -184,5 +276,16 @@ function Stat({ value, label }) {
       <div className="font-serif text-lg sm:text-xl font-bold italic text-ink">{value}</div>
       <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-wider text-gray">{label}</div>
     </div>
+  );
+}
+
+function SaathiFeatureChip({ icon: Icon, title, tone }) {
+  return (
+    <li className="bg-surface/85 backdrop-blur border border-line rounded-2xl p-3 flex items-center gap-2.5">
+      <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl shrink-0 ${tone}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <span className="font-serif text-[15px] font-semibold text-ink">{title}</span>
+    </li>
   );
 }

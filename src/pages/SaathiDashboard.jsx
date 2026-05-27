@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import {
   saathiMe, saathiUpdate, saathiSubmitVerification,
   saathiListProducts, saathiAttachProduct, saathiDetachProduct,
-  saathiLiveAssist, saathiRecentQueries,
+  saathiLiveAssist, saathiRecentQueries, saathiStats,
 } from '../api/auth';
 import { searchProducts } from '../api/api';
 import {
@@ -28,6 +28,7 @@ export default function SaathiDashboard() {
   const { user, ready } = useAuth();
   const navigate = useNavigate();
   const [acc, setAcc] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('live');
 
@@ -43,6 +44,7 @@ export default function SaathiDashboard() {
         if (e.response?.status === 404) navigate('/saathi');
       })
       .finally(() => setLoading(false));
+    saathiStats().then((r) => setStats(r.data)).catch(() => {});
   }, [user, navigate]);
 
   if (loading) return <div className="container-tight py-16 text-center text-gray text-sm">Loading…</div>;
@@ -85,6 +87,16 @@ export default function SaathiDashboard() {
         </div>
       </div>
 
+      {/* Quick KPI strip — gives a real-shop feel on first load. */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
+          <KpiCard label="Queries 24h" value={stats.queries24h} sublabel={`${stats.quotaLimit} daily quota`} />
+          <KpiCard label="Queries 7d" value={stats.queries7d} />
+          <KpiCard label="Match rate" value={`${Math.round((stats.matchRate || 0) * 100)}%`} sublabel="caught by catalog" />
+          <KpiCard label="Listed products" value={stats.totalProducts || 0} sublabel={`${stats.tier} tier`} />
+        </div>
+      )}
+
       {acc.verificationStatus !== 'verified' && <VerificationStrip acc={acc} onUpdated={setAcc} />}
 
       {/* Tabs */}
@@ -99,6 +111,16 @@ export default function SaathiDashboard() {
       {tab === 'products' && <ProductsTab />}
       {tab === 'embed' && <EmbedTab acc={acc} />}
       {tab === 'activity' && <ActivityTab />}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, sublabel }) {
+  return (
+    <div className="card-soft p-3">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-ink/55 mb-1">{label}</div>
+      <div className="font-serif text-xl sm:text-2xl font-bold italic text-ink leading-none">{value}</div>
+      {sublabel && <div className="text-[10px] font-mono text-ink/45 mt-1">{sublabel}</div>}
     </div>
   );
 }
@@ -139,7 +161,7 @@ function VerificationStrip({ acc, onUpdated }) {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="mt-4 bg-white rounded-2xl border border-line p-4 space-y-3">
+        <form onSubmit={submit} className="mt-4 bg-surface rounded-2xl border border-line p-4 space-y-3">
           <label className="block">
             <span className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1">NID number</span>
             <input value={nid} onChange={(e) => setNid(e.target.value)} placeholder="13 digit NID" className="w-full bg-cream-soft border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ink" />
@@ -172,7 +194,18 @@ function LiveAssistTab() {
     try {
       const r = await saathiLiveAssist(q.trim());
       setResult(r.data);
-    } catch { setResult({ error: true }); } finally { setBusy(false); }
+    } catch (err) {
+      const body = err.response?.data;
+      if (err.response?.status === 402) {
+        setResult({ error: 'trial_expired', message: body?.message });
+      } else if (err.response?.status === 429) {
+        setResult({ error: 'quota_exceeded', used: body?.used, limit: body?.limit, tier: body?.tier });
+      } else if (err.response?.status === 403) {
+        setResult({ error: 'suspended', note: body?.note });
+      } else {
+        setResult({ error: 'unknown' });
+      }
+    } finally { setBusy(false); }
   };
 
   const prices = (result?.match?.prices || []).slice().sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
@@ -189,7 +222,7 @@ function LiveAssistTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
           <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)}
                  placeholder="iPhone 15 Pro Max — start typing during your Live…"
-                 className="w-full pl-10 pr-3 py-3 bg-white border border-line-strong rounded-2xl text-sm focus:outline-none focus:border-ink" />
+                 className="w-full pl-10 pr-3 py-3 bg-surface border border-line-strong rounded-2xl text-sm focus:outline-none focus:border-ink text-ink placeholder-gray-soft" />
         </div>
         <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50 whitespace-nowrap">
           {busy ? 'Looking…' : 'Quote price'}
@@ -202,10 +235,32 @@ function LiveAssistTab() {
           <p className="text-gray text-sm">Type a product. We'll show you the market in one second.</p>
           <p className="text-gray text-xs mt-1">Tip: pin this tab during FB Live for instant pricing.</p>
         </div>
+      ) : result.error === 'trial_expired' ? (
+        <div className="card-soft p-6 text-center bg-yellow-soft border-yellow">
+          <AlertTriangle className="w-8 h-8 text-ink mx-auto mb-2" />
+          <h4 className="font-serif text-lg font-bold text-ink mb-1">Trial ended</h4>
+          <p className="text-sm text-ink/70 mb-4">{result.message || 'Upgrade to keep using live-assist.'}</p>
+          <Link to="/saathi#pricing" className="btn-primary inline-flex">Upgrade</Link>
+        </div>
+      ) : result.error === 'quota_exceeded' ? (
+        <div className="card-soft p-6 text-center bg-red-soft border-red/30">
+          <AlertTriangle className="w-8 h-8 text-red mx-auto mb-2" />
+          <h4 className="font-serif text-lg font-bold text-ink mb-1">Daily quota reached</h4>
+          <p className="text-sm text-ink/70 mb-2">
+            You've used <b>{result.used}</b> of <b>{result.limit}</b> lookups on the {result.tier} tier today.
+          </p>
+          <Link to="/saathi#pricing" className="btn-primary inline-flex">Upgrade to Pro</Link>
+        </div>
+      ) : result.error === 'suspended' ? (
+        <div className="card-soft p-6 text-center bg-red-soft border-red/30">
+          <AlertTriangle className="w-8 h-8 text-red mx-auto mb-2" />
+          <h4 className="font-serif text-lg font-bold text-ink mb-1">Account suspended</h4>
+          <p className="text-sm text-ink/70">{result.note || 'Contact support to restore access.'}</p>
+        </div>
       ) : result.error ? (
         <div className="card-soft p-6 text-center">
           <AlertTriangle className="w-8 h-8 text-red mx-auto mb-2" />
-          <p className="text-sm text-gray">Lookup failed. Try a simpler search term.</p>
+          <p className="text-sm text-ink/65">Lookup failed. Try a simpler search term.</p>
         </div>
       ) : !result.match ? (
         <div className="card-soft p-6 text-center">
@@ -393,7 +448,7 @@ function AddProductModal({ onClose, onAdded }) {
 
         <input value={q} onChange={(e) => { setQ(e.target.value); setPicked(null); }}
                placeholder="Search the Damkemon catalog…"
-               className="w-full bg-white border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ink mb-3" />
+               className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ink mb-3" />
 
         {!picked && results.length > 0 && (
           <ul className="space-y-1 mb-3 max-h-64 overflow-y-auto">
@@ -425,7 +480,7 @@ function AddProductModal({ onClose, onAdded }) {
         <label className="block mb-3">
           <span className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1">Your selling price (BDT)</span>
           <input type="number" value={price} onChange={(e) => setPrice(e.target.value)}
-                 placeholder="e.g. 52500" className="w-full bg-white border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ink" />
+                 placeholder="e.g. 52500" className="w-full bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-ink" />
         </label>
 
         <div className="flex gap-2">

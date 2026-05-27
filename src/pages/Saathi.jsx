@@ -48,10 +48,13 @@ export default function Saathi() {
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-soft border border-yellow text-ink text-[11px] font-mono font-bold uppercase tracking-wider mb-4">
           <Sparkles className="w-3 h-3" /> New for F-commerce sellers
         </span>
-        <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold italic text-ink leading-[1.05] tracking-tight mb-4">
+        <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold italic text-ink leading-[1.05] tracking-tight mb-2">
           Damkemon <span className="text-red">Saathi</span>
         </h1>
-        <p className="text-gray text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink/60 mb-4">
+          A seller's companion
+        </p>
+        <p className="text-ink/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
           The toolkit every Facebook shop needs. Quote smart prices on Live.
           Auto-reply to "দাম কত?" in Messenger. Earn the trust badge that
           turns lookers into buyers.
@@ -102,7 +105,7 @@ export default function Saathi() {
         <h2 className="font-serif text-2xl sm:text-3xl font-bold italic text-ink mb-1">
           How a shop earns ৳50k+ a month with Saathi
         </h2>
-        <p className="text-gray text-sm mb-5">
+        <p className="text-ink/65 text-sm mb-5">
           The math F-commerce shop owners run before signing up.
         </p>
         <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -129,7 +132,7 @@ export default function Saathi() {
         <h2 className="font-serif text-2xl sm:text-3xl font-bold italic text-ink mb-1 text-center">
           Simple pricing
         </h2>
-        <p className="text-gray text-sm mb-6 text-center">14 days free, no card required.</p>
+        <p className="text-ink/65 text-sm mb-6 text-center">14 days free, no card required.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <PriceCard tier="Saathi Lite" price="৳999" period="/mo" features={[
             'Live price assist (50 lookups/day)',
@@ -195,7 +198,7 @@ export default function Saathi() {
         </div>
       )}
 
-      <style>{`.input{width:100%;background:white;border:1px solid var(--color-line);border-radius:0.75rem;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-ink)}`}</style>
+      <style>{`.input{width:100%;background:var(--color-surface);color:var(--color-ink);border:1px solid var(--color-line);border-radius:0.75rem;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-ink)}.input::placeholder{color:var(--color-gray-soft)}`}</style>
     </div>
   );
 }
@@ -207,7 +210,7 @@ function Feature({ icon: Icon, tone, title, body }) {
         <Icon className="w-5 h-5" />
       </div>
       <h3 className="font-serif text-lg font-bold text-ink mb-1.5">{title}</h3>
-      <p className="text-gray text-[13px] leading-relaxed">{body}</p>
+      <p className="text-ink/65 text-[13px] leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -217,24 +220,29 @@ function PathStep({ n, title, children }) {
     <li className="flex flex-col">
       <div className="inline-flex items-center gap-2 mb-2">
         <span className="font-serif text-2xl font-bold italic text-red">{n}</span>
-        <span className="text-[11px] font-mono uppercase tracking-wider text-gray">Step</span>
+        <span className="text-[11px] font-mono uppercase tracking-wider text-ink/55">Step</span>
       </div>
       <h4 className="font-serif text-base font-semibold text-ink mb-1.5">{title}</h4>
-      <p className="text-gray text-[13px] leading-relaxed">{children}</p>
+      <p className="text-ink/70 text-[13px] leading-relaxed">{children}</p>
     </li>
   );
 }
 
 function PriceCard({ tier, price, period, features, featured }) {
+  // Background uses theme-aware tokens so light/dark both stay legible.
+  // The featured card inverts (uses ink/cream which auto-flip) to stay
+  // visually distinct from its peers in both themes.
   return (
-    <div className={`p-5 rounded-3xl ${featured ? 'bg-ink text-cream border-2 border-yellow shadow-[0_10px_30px_-8px_rgba(15,19,26,0.4)]' : 'bg-white border border-line-strong'}`}>
+    <div className={`p-5 rounded-3xl ${featured
+      ? 'bg-ink text-cream border-2 border-yellow shadow-[0_10px_30px_-8px_rgba(15,19,26,0.4)]'
+      : 'bg-surface border border-line-strong shadow-[var(--shadow-soft)]'}`}>
       <div className="flex items-center justify-between mb-3">
         <h4 className={`font-serif text-lg font-bold ${featured ? 'text-cream' : 'text-ink'}`}>{tier}</h4>
         {featured && <Zap className="w-4 h-4 text-yellow" />}
       </div>
       <div className="mb-4">
         <span className={`font-mono text-3xl font-bold ${featured ? 'text-cream' : 'text-ink'}`}>{price}</span>
-        <span className={`font-mono text-sm ${featured ? 'text-cream/70' : 'text-gray'}`}>{period}</span>
+        <span className={`font-mono text-sm ${featured ? 'text-cream/70' : 'text-ink/55'}`}>{period}</span>
       </div>
       <ul className="space-y-1.5">
         {features.map((f, i) => (
