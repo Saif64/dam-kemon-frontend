@@ -41,6 +41,7 @@ export default function Navbar() {
   const navLinks = [
     { to: '/',          label: 'Home' },
     { to: '/browse',    label: 'Browse' },
+    { to: '/protect',   label: 'Protect' },
     { to: '/compare',   label: 'Compare' },
     { to: '/sellers',   label: 'Shops' },
     { to: '/saathi',    label: 'Sell with us' },

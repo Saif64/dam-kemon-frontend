@@ -301,6 +301,13 @@ export default function ProductDetail() {
                   Buy from {cheapest.siteName} <ExternalLink className="w-4 h-4" />
                 </a>
               )}
+              <Link
+                to={`/protect?productId=${encodeURIComponent(product.id || id)}&shopSlug=${encodeURIComponent(cheapest?.siteSlug || cheapest?.siteName || '')}&itemName=${encodeURIComponent(product.name || '')}&amount=${lowestPrice || ''}`}
+                className="btn-ghost"
+                title="Check scam risk & open a protected order"
+              >
+                <ShieldCheck className="w-4 h-4 text-green" /> Buy Protected
+              </Link>
               <button
                 onClick={toggleWishlist}
                 disabled={wishlistBusy}
