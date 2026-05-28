@@ -119,6 +119,9 @@ export const postDeliveryReport = (idOrSlug, payload) =>
 /** Upvote a review as helpful. */
 export const markReviewHelpful = (id) => api.post(`/reviews/${id}/helpful`);
 
+/** "দরদাম" shopping assistant — { reply, products[], trust{}, suggestions[] }. */
+export const assistantChat = (message) => api.post('/assistant/chat', { message });
+
 // Admin: review moderation queue
 export const adminFlaggedReviews = () => api.get('/admin/reviews/flagged');
 export const adminSetReviewStatus = (id, status) =>

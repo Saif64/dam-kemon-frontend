@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import BottomNav from './components/BottomNav';
 import CompareBar from './components/CompareBar';
+import AssistantWidget from './components/AssistantWidget';
 import { AuthProvider } from './auth/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -88,6 +89,7 @@ function App() {
           <Footer />
           <BottomNav />
           <CompareBar />
+          <AssistantWidget />
         </div>
       </AuthProvider>
     </BrowserRouter>
