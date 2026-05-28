@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { searchProducts } from '../api/api';
+import { searchProducts, getShopTrust } from '../api/api';
 import SearchProductCard from '../components/SearchProductCard';
 import { SkeletonRow } from '../components/LoadingSpinner';
 import SearchProductCardSkeleton from '../components/SearchProductCardSkeleton';
@@ -39,6 +39,7 @@ export default function SearchResults() {
   const [sortBy, setSortBy] = useState('relevance');
   const [showSort, setShowSort] = useState(false);
   const [searchInput, setSearchInput] = useState(query);
+  const [trust, setTrust] = useState({});
 
   const runSearch = (q) => {
     if (!q) { setLoading(false); setError(null); return; }
@@ -70,6 +71,19 @@ export default function SearchResults() {
     setSearchInput(query);
     runSearch(query);
   }, [query]);
+
+  // Trust hint on each card uses the cheapest seller's profile; batch them.
+  useEffect(() => {
+    if (!products.length) { setTrust({}); return; }
+    const slugs = [...new Set(products.map((p) => {
+      const ps = (p.prices || []).slice().sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+      return ps[0]?.siteSlug || ps[0]?.siteName;
+    }).filter(Boolean))].slice(0, 50);
+    if (!slugs.length) return;
+    let alive = true;
+    getShopTrust(slugs).then((r) => { if (alive && r.data) setTrust(r.data); }).catch(() => {});
+    return () => { alive = false; };
+  }, [products]);
 
   const handleNewSearch = (e) => {
     e.preventDefault();
@@ -300,6 +314,7 @@ export default function SearchResults() {
               rank={i + 1}
               query={query}
               sponsored={!!meta?.sponsoredProductIds?.includes(p.id)}
+              trust={trust}
             />
           ))}
         </div>

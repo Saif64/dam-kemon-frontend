@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getProduct, getProductHistory, getDailyPriceHistory, affiliateUrl } from '../api/api';
+import { getProduct, getProductHistory, getDailyPriceHistory, getShopTrust, affiliateUrl } from '../api/api';
 import { trackView } from '../api/analytics';
 import { pushRecent } from '../api/recentlyViewed';
 import { addToWishlist, removeFromWishlist, listWishlist, updateWishlistAlert } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
 import PriceComparisonTable from '../components/PriceComparisonTable';
 import PriceHistoryChart from '../components/PriceHistoryChart';
+import SmartVerdict from '../components/SmartVerdict';
+import ReviewsPanel from '../components/ReviewsPanel';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ProductSEO from '../components/ProductSEO';
 import {
@@ -141,6 +143,23 @@ export default function ProductDetail() {
     }).catch(() => {});
   }, [product?.id, id]);
 
+  // Trust / delivery / genuineness profiles for every seller on this product,
+  // fetched in one batched call keyed by shop slug.
+  const [trust, setTrust] = useState({});
+  useEffect(() => {
+    const slugs = [...new Set((product?.prices || []).map((p) => p.siteSlug || p.siteName).filter(Boolean))];
+    if (slugs.length === 0) { setTrust({}); return; }
+    let alive = true;
+    getShopTrust(slugs).then((r) => { if (alive && r.data) setTrust(r.data); }).catch(() => {});
+    return () => { alive = false; };
+  }, [product?.id, id]);
+
+  // A freshly submitted review returns the seller's updated trust profile —
+  // merge it so the verdict + comparison table reflect it without a refetch.
+  const onTrustUpdated = (t) => {
+    if (t && t.shopSlug) setTrust((m) => ({ ...m, [t.shopSlug]: t }));
+  };
+
   if (loading) {
     return (
       <div className="container-tight py-12">
@@ -179,6 +198,7 @@ export default function ProductDetail() {
 
   const tabs = [
     { id: 'prices', label: 'Prices', count: sellerCount },
+    { id: 'reviews', label: 'Reviews & Trust' },
     { id: 'history', label: 'History' },
   ];
 
@@ -320,6 +340,8 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      <SmartVerdict product={product} trust={trust} />
+
       <div className="flex gap-1 bg-white border border-line rounded-full p-1 mb-4 sm:mb-6 overflow-x-auto no-scrollbar sticky top-14 sm:top-16 z-10 shadow-[var(--shadow-soft)]">
         {tabs.map((tab) => (
           <button
@@ -341,7 +363,10 @@ export default function ProductDetail() {
 
       <div className="animate-fade-in">
         {activeTab === 'prices' && (
-          <PriceComparisonTable prices={product.prices || []} productId={product.id || id} />
+          <PriceComparisonTable prices={product.prices || []} productId={product.id || id} trust={trust} />
+        )}
+        {activeTab === 'reviews' && (
+          <ReviewsPanel productId={product.id || id} product={product} onTrustUpdated={onTrustUpdated} />
         )}
         {activeTab === 'history' && <PriceHistoryChart history={history} dailySeries={dailySeries} />}
       </div>

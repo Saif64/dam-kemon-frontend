@@ -13,6 +13,7 @@ import SearchResults from './pages/SearchResults';
 
 // Lazy-load everything else so the initial bundle stays slim.
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Browse = lazy(() => import('./pages/Browse'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Sellers = lazy(() => import('./pages/Sellers'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -54,6 +55,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/search" element={<SearchResults />} />
+                <Route path="/browse" element={<Browse />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/compare" element={<Compare />} />
                 <Route path="/sellers" element={<Sellers />} />

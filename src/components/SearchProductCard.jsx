@@ -4,6 +4,7 @@ import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronR
 import { trackClick } from '../api/analytics';
 import { affiliateUrl } from '../api/api';
 import { toggle, inQueue, subscribe } from '../api/compareQueue';
+import TrustBadge from './TrustBadge';
 
 function fmt(p) {
   if (p == null) return 'N/A';
@@ -28,7 +29,7 @@ function hostOf(url) {
  * links are demoted to small chips at the bottom; the card itself is
  * the unit of value, not any single seller.
  */
-export default function SearchProductCard({ product, rank, sponsored = false, query }) {
+export default function SearchProductCard({ product, rank, sponsored = false, query, trust = {} }) {
   const [staged, setStaged] = useState(inQueue(product.id));
   useEffect(() => subscribe(() => setStaged(inQueue(product.id))), [product.id]);
   const prices = Array.isArray(product.prices) ? [...product.prices] : [];
@@ -47,6 +48,7 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
 
   const rating = product.averageRating;
   const totalReviews = product.totalReviews;
+  const cheapestTrust = cheapest ? trust[cheapest.siteSlug || cheapest.siteName] || null : null;
 
   return (
     <Link
@@ -165,6 +167,11 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
                   <ChevronRight className="w-4 h-4" />
                 </span>
               </div>
+              {cheapestTrust && (
+                <div className="mt-2 pt-2 border-t border-line">
+                  <TrustBadge trust={cheapestTrust} variant="compact" />
+                </div>
+              )}
             </div>
           )}
         </div>

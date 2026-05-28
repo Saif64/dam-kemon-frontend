@@ -40,6 +40,7 @@ export default function Navbar() {
   // funnels merchants who'd otherwise never find the dashboard signup.
   const navLinks = [
     { to: '/',          label: 'Home' },
+    { to: '/browse',    label: 'Browse' },
     { to: '/compare',   label: 'Compare' },
     { to: '/sellers',   label: 'Shops' },
     { to: '/saathi',    label: 'Sell with us' },

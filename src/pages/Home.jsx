@@ -95,7 +95,7 @@ export default function Home() {
                 Recently <em className="text-red">indexed</em>
               </h2>
             </div>
-            <Link to="/search?q=" className="text-sm font-semibold text-ink/70 hover:text-ink inline-flex items-center gap-1.5">
+            <Link to="/browse" className="text-sm font-semibold text-ink/70 hover:text-ink inline-flex items-center gap-1.5">
               Browse all <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

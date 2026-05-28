@@ -66,8 +66,11 @@ export const getDashboardStats = () =>
 export const triggerScrape = (query, sites) =>
   api.post('/scrape', { query, sites });
 
-export const getAllProducts = (page = 0, size = 20) =>
-  api.get('/products', { params: { page, size } });
+export const getAllProducts = (page = 0, size = 20, category) =>
+  api.get('/products', { params: { page, size, ...(category ? { category } : {}) } });
+
+/** Distinct catalog categories — powers the Browse filter chips. */
+export const getCategories = () => api.get('/products/categories');
 
 export const compareProducts = (ids) =>
   api.get('/compare', { params: { ids: Array.isArray(ids) ? ids.join(',') : ids } });
@@ -87,6 +90,27 @@ export const getHotDrops = (limit = 12) =>
 
 /** Public shop submission. */
 export const submitShop = (payload) => api.post('/shops/submit', payload);
+
+// ─── Trust & delivery decision layer ───
+/**
+ * Batch-fetch the trust/delivery/genuineness profile for a set of shop
+ * slugs (the siteSlug on each SitePrice). Returns a slug→profile map.
+ */
+export const getShopTrust = (slugs) =>
+  api.get('/trust/shops', { params: { slugs: Array.isArray(slugs) ? slugs.join(',') : slugs } });
+
+/** Community + scraped reviews for a product, newest first. */
+export const getProductReviews = (idOrSlug) =>
+  api.get(`/products/${idOrSlug}/reviews`);
+
+/**
+ * Submit a community review. Anonymous — the X-Anon-Id header (added by the
+ * request interceptor) is the identity, one review per product. Payload:
+ * { rating, title, content, reviewerName, shopSlug, siteName,
+ *   deliveryDaysReported, wouldRecommend, trustVote }.
+ */
+export const postProductReview = (idOrSlug, payload) =>
+  api.post(`/products/${idOrSlug}/reviews`, payload);
 
 /** Hydrate a list of product ids — used by the recently-viewed rail. */
 export const getProductsByIds = (ids) =>
