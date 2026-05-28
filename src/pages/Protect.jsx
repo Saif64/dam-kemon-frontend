@@ -18,7 +18,31 @@ const PAYMENTS = [
   { v: 'nagad_merchant', label: 'Nagad — Payment (merchant)' },
   { v: 'card', label: 'Card' },
   { v: 'advance_bank', label: 'Advance bank transfer' },
+  { v: 'advance_full', label: 'Full advance payment' },
+  { v: 'store_pickup', label: 'Store pickup' },
   { v: 'other', label: 'Other' },
+];
+
+const SELLER_TYPES = [
+  { v: 'fb_page', label: 'Facebook page / group seller' },
+  { v: 'instagram', label: 'Instagram seller' },
+  { v: 'marketplace', label: 'Marketplace listing (Daraz/Bikroy…)' },
+  { v: 'known_shop', label: 'Known online shop / website' },
+  { v: 'unknown', label: 'Not sure' },
+];
+
+const CATEGORIES = [
+  { v: '', label: 'Auto-detect' },
+  { v: 'smartphone', label: 'Smartphone' }, { v: 'laptop', label: 'Laptop' },
+  { v: 'tablet', label: 'Tablet' }, { v: 'headphone', label: 'Headphone / Audio' },
+  { v: 'smartwatch', label: 'Smartwatch' }, { v: 'camera', label: 'Camera' },
+  { v: 'accessory', label: 'Accessory' }, { v: 'tv', label: 'TV' },
+  { v: 'appliance', label: 'Home appliance' }, { v: 'ac', label: 'Air conditioner' },
+  { v: 'refrigerator', label: 'Refrigerator' }, { v: 'gaming', label: 'Gaming' },
+  { v: 'fashion', label: 'Fashion' }, { v: 'beauty', label: 'Beauty' },
+  { v: 'jewellery', label: 'Jewellery' }, { v: 'book', label: 'Book' },
+  { v: 'grocery', label: 'Grocery' }, { v: 'furniture', label: 'Furniture' },
+  { v: 'power', label: 'Power backup (IPS/UPS)' }, { v: 'health', label: 'Health' },
 ];
 
 const levelStyle = (lvl) => ({
@@ -34,6 +58,7 @@ export default function Protect() {
   const [params] = useSearchParams();
   const [form, setForm] = useState({
     sellerName: '', shopSlug: '', productId: '', itemName: '', amount: '', paymentMethod: 'cod',
+    sellerType: 'fb_page', category: '',
   });
   const [verdict, setVerdict] = useState(null);
   const [checking, setChecking] = useState(false);
@@ -44,9 +69,11 @@ export default function Protect() {
   // Prefill from a product page's "Buy Protected" CTA.
   useEffect(() => {
     const next = {};
-    ['productId', 'shopSlug', 'itemName', 'amount', 'sellerName'].forEach((k) => {
+    ['productId', 'shopSlug', 'itemName', 'amount', 'sellerName', 'category'].forEach((k) => {
       const v = params.get(k); if (v) next[k] = v;
     });
+    // Arriving from a product page means it's a known shop, not a random page.
+    if (params.get('shopSlug')) next.sellerType = 'known_shop';
     if (Object.keys(next).length) setForm((f) => ({ ...f, ...next }));
   }, [params]);
 
@@ -60,8 +87,11 @@ export default function Protect() {
         sellerName: form.sellerName || undefined,
         shopSlug: form.shopSlug || undefined,
         productId: form.productId || undefined,
+        itemName: form.itemName || undefined,
         amount: form.amount === '' ? undefined : Number(form.amount),
         paymentMethod: form.paymentMethod,
+        sellerType: form.sellerType || undefined,
+        category: form.category || undefined,
       });
       setVerdict(res.data);
     } catch { setVerdict(null); }
@@ -79,6 +109,8 @@ export default function Protect() {
         itemName: form.itemName || undefined,
         amount: form.amount === '' ? undefined : Number(form.amount),
         paymentMethod: form.paymentMethod,
+        sellerType: form.sellerType || undefined,
+        category: form.category || undefined,
       });
       if (res.data?.order) setCreated(res.data.order);
     } catch { /* noop */ }
@@ -124,6 +156,16 @@ export default function Protect() {
           <Field label="How will you pay?">
             <select value={form.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)} className="dk-input">
               {PAYMENTS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+            </select>
+          </Field>
+          <Field label="What kind of seller?">
+            <select value={form.sellerType} onChange={(e) => set('sellerType', e.target.value)} className="dk-input">
+              {SELLER_TYPES.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Category (optional)">
+            <select value={form.category} onChange={(e) => set('category', e.target.value)} className="dk-input">
+              {CATEGORIES.map((c) => <option key={c.v} value={c.v}>{c.label}</option>)}
             </select>
           </Field>
         </div>
@@ -202,6 +244,19 @@ function Verdict({ verdict, onOpen, canOpen, creating, created }) {
           </ul>
         </div>
 
+        {verdict.categoryTips?.length > 0 && (
+          <div className="rounded-2xl bg-yellow-soft/60 p-3.5">
+            <div className="text-[11px] uppercase tracking-wider font-mono text-ink/60 mb-2">For this category</div>
+            <ul className="space-y-1.5">
+              {verdict.categoryTips.map((c, i) => (
+                <li key={i} className="flex items-start gap-2 text-[13px] text-ink/85">
+                  <Sparkles className="w-3.5 h-3.5 mt-0.5 text-yellow shrink-0" /> {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {verdict.saferAlternatives?.length > 0 && (
           <div>
             <div className="text-[11px] uppercase tracking-wider font-mono text-gray mb-2">Safer options for the same product</div>
@@ -216,6 +271,27 @@ function Verdict({ verdict, onOpen, canOpen, creating, created }) {
                   </span>
                   <span className="inline-flex items-center gap-1 font-mono font-bold text-ink">{fmt(a.price)} <ChevronRight className="w-4 h-4 text-gray" /></span>
                 </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {verdict.saferShops?.length > 0 && (
+          <div>
+            <div className="text-[11px] uppercase tracking-wider font-mono text-gray mb-2">Trusted shops that sell this category</div>
+            <div className="space-y-1.5">
+              {verdict.saferShops.map((s, i) => (
+                <a key={i} href={s.baseUrl || '#'} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-2 bg-white border border-line rounded-2xl px-3 py-2 hover:border-line-strong transition-colors">
+                  <span className="inline-flex items-center gap-2 text-sm">
+                    <ShieldCheck className="w-4 h-4 text-green" />
+                    <span className="font-semibold text-ink">{s.shopName}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full bg-green-soft text-green">{s.trustScore}/100</span>
+                    <ArrowRight className="w-4 h-4 text-gray" />
+                  </span>
+                </a>
               ))}
             </div>
           </div>
