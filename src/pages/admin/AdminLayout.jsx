@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { triggerReindex, indexStatus } from '../../api/api';
 import {
   Shield, Database, Store, Inbox, BarChart3, FileText, LogOut, Package,
-  Search as SearchIcon, Clock, HardDrive, Play, Loader2, CheckCircle2,
+  Search as SearchIcon, Clock, HardDrive, Play, Loader2, CheckCircle2, ShieldAlert,
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -97,6 +97,7 @@ export default function AdminLayout() {
         <Tab to="/admin/shops" icon={Store}>Shops</Tab>
         <Tab to="/admin/pending-shops" icon={Inbox}>Pending</Tab>
         <Tab to="/admin/catalog" icon={Package}>Catalog</Tab>
+        <Tab to="/admin/reviews" icon={ShieldAlert}>Reviews</Tab>
         <Tab to="/admin/search-log" icon={SearchIcon}>Search log</Tab>
         <Tab to="/admin/stats" icon={BarChart3}>Stats</Tab>
         <Tab to="/admin/cache" icon={HardDrive}>Cache</Tab>

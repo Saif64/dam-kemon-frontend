@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Star, ThumbsUp, ThumbsDown, Send, CheckCircle2, Truck, MessageSquare, Loader2, PenLine,
+  Star, ThumbsUp, ThumbsDown, Send, CheckCircle2, Truck, MessageSquare, Loader2, PenLine, BadgeCheck,
 } from 'lucide-react';
-import { getProductReviews, postProductReview } from '../api/api';
+import { getProductReviews, postProductReview, postDeliveryReport, markReviewHelpful } from '../api/api';
 
 function fmtDate(v) {
   if (!v) return '';
@@ -33,6 +33,7 @@ export default function ReviewsPanel({ productId, product, onTrustUpdated }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const [delivery, setDelivery] = useState({ open: false, shopSlug: '', days: '', busy: false, done: false, error: null });
 
   const sellers = useMemo(() => (product?.prices || [])
     .map((p) => ({ slug: p.siteSlug || p.siteName, name: p.siteName }))
@@ -87,6 +88,22 @@ export default function ReviewsPanel({ productId, product, onTrustUpdated }) {
     }
   };
 
+  const submitDelivery = async (e) => {
+    e.preventDefault();
+    setDelivery((d) => ({ ...d, error: null }));
+    if (!delivery.shopSlug) { setDelivery((d) => ({ ...d, error: 'Pick the seller you bought from.' })); return; }
+    if (delivery.days === '') { setDelivery((d) => ({ ...d, error: 'Enter how many days delivery took.' })); return; }
+    setDelivery((d) => ({ ...d, busy: true }));
+    try {
+      const res = await postDeliveryReport(productId, { shopSlug: delivery.shopSlug, days: Number(delivery.days) });
+      if (res.data?.trust && onTrustUpdated) onTrustUpdated(res.data.trust);
+      setDelivery({ open: false, shopSlug: '', days: '', busy: false, done: true, error: null });
+    } catch (err) {
+      const status = err.response?.status;
+      setDelivery((d) => ({ ...d, busy: false, error: status === 409 ? 'You already reported delivery for this product.' : 'Could not submit. Try again.' }));
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Summary header */}
@@ -119,6 +136,52 @@ export default function ReviewsPanel({ productId, product, onTrustUpdated }) {
           </span>
         )}
       </div>
+
+      {/* Delivery quick-report — lighter than a full review, just feeds the
+          seller's delivery estimate. */}
+      {sellers.length > 0 && !delivery.done && (
+        delivery.open ? (
+          <form onSubmit={submitDelivery} className="card-soft p-4 flex flex-col sm:flex-row sm:items-end gap-3 animate-slide-down">
+            <div className="flex-1">
+              <label className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1.5">Seller you bought from</label>
+              <select
+                value={delivery.shopSlug}
+                onChange={(e) => setDelivery((d) => ({ ...d, shopSlug: e.target.value }))}
+                className="w-full bg-white border border-line rounded-2xl px-3 py-2.5 text-sm text-ink focus:outline-none focus:border-ink/40"
+              >
+                <option value="">Select a seller</option>
+                {sellers.map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="w-full sm:w-32">
+              <label className="block text-[11px] uppercase tracking-wider font-mono text-gray mb-1.5">Days to arrive</label>
+              <div className="flex items-center gap-2 bg-white border border-line rounded-2xl px-3 py-2.5">
+                <Truck className="w-4 h-4 text-gray" />
+                <input type="number" min="0" max="60" value={delivery.days}
+                  onChange={(e) => setDelivery((d) => ({ ...d, days: e.target.value }))}
+                  placeholder="3" className="w-full bg-transparent outline-none text-sm font-mono" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setDelivery((d) => ({ ...d, open: false, error: null }))} className="btn-ghost">Cancel</button>
+              <button type="submit" disabled={delivery.busy} className="btn-primary disabled:opacity-50">
+                {delivery.busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Submit
+              </button>
+            </div>
+            {delivery.error && <p className="text-red text-xs w-full sm:w-auto">{delivery.error}</p>}
+          </form>
+        ) : (
+          <button onClick={() => setDelivery((d) => ({ ...d, open: true }))}
+            className="w-full text-left text-sm text-ink/70 hover:text-ink inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-dashed border-line-strong hover:bg-cream-soft transition-colors">
+            <Truck className="w-4 h-4 text-gray" /> Bought this? <span className="font-semibold">Report your delivery time</span> to help others.
+          </button>
+        )
+      )}
+      {delivery.done && (
+        <div className="card-soft p-3 text-sm text-green inline-flex items-center gap-1.5">
+          <CheckCircle2 className="w-4 h-4" /> Thanks — your delivery time was recorded.
+        </div>
+      )}
 
       {/* Write form */}
       {showForm && (
@@ -262,6 +325,23 @@ function RecToggle({ active, onClick, label, tone }) {
 
 function ReviewCard({ r }) {
   const isCommunity = r.source === 'community';
+  const storeKey = `dk_helpful_${r.id}`;
+  const [helpful, setHelpful] = useState(r.helpfulCount || 0);
+  const [voted, setVoted] = useState(() => {
+    try { return !!localStorage.getItem(storeKey); } catch { return false; }
+  });
+
+  const voteHelpful = async () => {
+    if (voted || !r.id) return;
+    setVoted(true);
+    setHelpful((n) => n + 1);
+    try { localStorage.setItem(storeKey, '1'); } catch { /* ignore */ }
+    try {
+      const res = await markReviewHelpful(r.id);
+      if (res.data?.helpfulCount != null) setHelpful(res.data.helpfulCount);
+    } catch { /* optimistic; leave as-is */ }
+  };
+
   return (
     <div className="card-soft p-4">
       <div className="flex items-start justify-between gap-3 mb-1.5">
@@ -270,7 +350,14 @@ function ReviewCard({ r }) {
             {(r.reviewerName || 'A')[0].toUpperCase()}
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-ink text-sm truncate">{r.reviewerName || 'Anonymous'}</div>
+            <div className="font-semibold text-ink text-sm truncate inline-flex items-center gap-1.5">
+              {r.reviewerName || 'Anonymous'}
+              {r.verified && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-green text-white" title="Bought via Damkemon">
+                  <BadgeCheck className="w-2.5 h-2.5" /> Verified
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-gray">{fmtDate(r.reviewDate)}{r.siteName ? ` · bought from ${r.siteName}` : ''}</div>
           </div>
         </div>
@@ -304,6 +391,16 @@ function ReviewCard({ r }) {
         {r.trustVote === 'down' && (
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-soft text-red">Distrusts seller</span>
         )}
+        <button
+          onClick={voteHelpful}
+          disabled={voted}
+          className={`ml-auto inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
+            voted ? 'border-green/30 text-green bg-green-soft' : 'border-line text-gray hover:border-line-strong hover:text-ink'
+          }`}
+          title={voted ? 'Thanks for the feedback' : 'Was this helpful?'}
+        >
+          <ThumbsUp className="w-3 h-3" /> Helpful{helpful > 0 ? ` · ${helpful}` : ''}
+        </button>
       </div>
     </div>
   );

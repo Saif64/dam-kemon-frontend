@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale, Megaphone, Sparkles } from 'lucide-react';
 import { trackClick } from '../api/analytics';
 import { affiliateUrl } from '../api/api';
 import { toggle, inQueue, subscribe } from '../api/compareQueue';
@@ -29,7 +29,8 @@ function hostOf(url) {
  * links are demoted to small chips at the bottom; the card itself is
  * the unit of value, not any single seller.
  */
-export default function SearchProductCard({ product, rank, sponsored = false, query, trust = {} }) {
+export default function SearchProductCard({ product, rank, sponsored = false, query, trust = {}, smartPick = false }) {
+  const navigate = useNavigate();
   const [staged, setStaged] = useState(inQueue(product.id));
   useEffect(() => subscribe(() => setStaged(inQueue(product.id))), [product.id]);
   const prices = Array.isArray(product.prices) ? [...product.prices] : [];
@@ -44,17 +45,19 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
     ? Math.round((savings / highest.price) * 100) : 0;
 
   const detailHref = `/product/${product.id || product.slug || ''}`;
-  const detailLink = { pathname: detailHref };
+  const goToDetail = () => navigate(detailHref, { state: { product } });
 
   const rating = product.averageRating;
   const totalReviews = product.totalReviews;
   const cheapestTrust = cheapest ? trust[cheapest.siteSlug || cheapest.siteName] || null : null;
 
   return (
-    <Link
-      to={detailLink}
-      state={{ product }}
-      className="card-soft overflow-hidden flex flex-col group hover:shadow-[var(--shadow-lift)] hover:border-line-strong transition-all"
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={goToDetail}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToDetail(); } }}
+      className="card-soft overflow-hidden flex flex-col group hover:shadow-[var(--shadow-lift)] hover:border-line-strong transition-all cursor-pointer"
     >
       <div className="flex flex-col sm:flex-row">
         {/* Image */}
@@ -72,6 +75,10 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
           {sponsored ? (
             <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-yellow text-ink px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(0,0,0,0.18)]">
               <Megaphone className="w-3 h-3" /> Sponsored
+            </div>
+          ) : smartPick ? (
+            <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-lime text-ink px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(190,242,100,0.6)]">
+              <Sparkles className="w-3 h-3" /> Smart pick
             </div>
           ) : rank === 1 && (
             <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-ink text-cream px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
@@ -216,6 +223,6 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
           </div>
         </div>
       )}
-    </Link>
+    </div>
   );
 }

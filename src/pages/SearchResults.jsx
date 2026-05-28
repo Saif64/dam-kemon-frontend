@@ -115,6 +115,31 @@ export default function SearchResults() {
     return { low, high, avg, savings: high - low };
   }, [sorted]);
 
+  // "Smart pick" — the single result that best balances seller trust, price
+  // and delivery (not just relevance or cheapest). Needs trust data + at least
+  // two comparable results, so it only appears once profiles have loaded.
+  const smartPickId = useMemo(() => {
+    const rows = sorted.map((p) => {
+      const ps = (p.prices || []).slice().sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+      const cheap = ps[0];
+      return { id: p.id, price: cheap?.price ?? null, t: cheap ? trust[cheap.siteSlug || cheap.siteName] : null };
+    }).filter((r) => r.id && r.price != null);
+    if (rows.length < 2 || !rows.some((r) => r.t)) return null;
+    const prices = rows.map((r) => r.price);
+    const min = Math.min(...prices), max = Math.max(...prices);
+    const span = max - min || 1;
+    let best = null, bestScore = -Infinity;
+    for (const r of rows) {
+      const trustN = (r.t?.trustScore ?? 60) / 100;
+      const priceAdv = (max - r.price) / span; // 1 = cheapest, 0 = priciest
+      const dmid = r.t ? (r.t.avgReportedDelivery ?? (((r.t.deliveryDaysMin ?? 3) + (r.t.deliveryDaysMax ?? 7)) / 2)) : 5;
+      const delN = Math.max(0, Math.min(1, 1 - dmid / 10));
+      const score = 0.5 * trustN + 0.3 * priceAdv + 0.2 * delN;
+      if (score > bestScore) { bestScore = score; best = r.id; }
+    }
+    return best;
+  }, [sorted, trust]);
+
   if (!query) {
     return (
       <div className="container-tight py-16 sm:py-24 text-center">
@@ -315,6 +340,7 @@ export default function SearchResults() {
               query={query}
               sponsored={!!meta?.sponsoredProductIds?.includes(p.id)}
               trust={trust}
+              smartPick={!!smartPickId && p.id === smartPickId}
             />
           ))}
         </div>

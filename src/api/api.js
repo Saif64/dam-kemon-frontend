@@ -112,6 +112,18 @@ export const getProductReviews = (idOrSlug) =>
 export const postProductReview = (idOrSlug, payload) =>
   api.post(`/products/${idOrSlug}/reviews`, payload);
 
+/** Lightweight delivery-time report (no full review). { shopSlug, days }. */
+export const postDeliveryReport = (idOrSlug, payload) =>
+  api.post(`/products/${idOrSlug}/delivery-report`, payload);
+
+/** Upvote a review as helpful. */
+export const markReviewHelpful = (id) => api.post(`/reviews/${id}/helpful`);
+
+// Admin: review moderation queue
+export const adminFlaggedReviews = () => api.get('/admin/reviews/flagged');
+export const adminSetReviewStatus = (id, status) =>
+  api.post(`/admin/reviews/${id}/status`, { status });
+
 /** Hydrate a list of product ids — used by the recently-viewed rail. */
 export const getProductsByIds = (ids) =>
   api.get('/products/by-ids', { params: { ids: Array.isArray(ids) ? ids.join(',') : ids } });
