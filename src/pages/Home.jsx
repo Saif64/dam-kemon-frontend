@@ -6,9 +6,10 @@ import LiveActivityPill from '../components/LiveActivityPill';
 import TrendingStrip from '../components/TrendingStrip';
 import HotDropsRail from '../components/HotDropsRail';
 import RecentlyViewedRail from '../components/RecentlyViewedRail';
+import ProtectShowcase from '../components/ProtectShowcase';
 import {
   Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown,
-  Radio, MessageSquare, Globe, X, Check, BadgeCheck, Languages, Bell, ShoppingBag,
+  Radio, MessageSquare, BadgeCheck, ShoppingBag,
 } from 'lucide-react';
 
 function fmt(p) {
@@ -145,49 +146,9 @@ export default function Home() {
         </section>
       )}
 
-      {/* Why Damkemon vs the rest — positioning copy. Google Shopping is the
-          obvious comparison every buyer + investor will make, so we address
-          it head-on. The advantages listed are real and BD-specific. */}
-      <section className="container-tight py-10 sm:py-14 lg:py-18">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="tag-bar mb-2 mx-auto">Why Damkemon</div>
-          <h2 className="font-serif font-semibold text-[clamp(1.5rem,4vw,2.5rem)] leading-tight tracking-tight text-ink">
-            Built for Bangladesh.<br className="sm:hidden" />
-            <em className="text-red"> Better than Google Shopping.</em>
-          </h2>
-        </div>
-        <div className="card-elev overflow-hidden">
-          <div className="grid grid-cols-3 text-[12px] sm:text-sm font-mono uppercase tracking-wider bg-cream-soft border-b border-line">
-            <div className="px-3 sm:px-5 py-3 text-ink/55">Feature</div>
-            <div className="px-3 sm:px-5 py-3 text-ink font-bold inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red"></span> Damkemon
-            </div>
-            <div className="px-3 sm:px-5 py-3 text-ink/55">Google Shopping</div>
-          </div>
-          {[
-            { label: '60+ BD shops indexed nightly',          dk: true,  gs: false },
-            { label: 'Bangla + English search (typo-tolerant)', dk: true,  gs: false },
-            { label: 'Facebook & Messenger sellers',          dk: true,  gs: false },
-            { label: 'COD + bKash signals on each listing',   dk: true,  gs: false },
-            { label: 'Price-drop alerts (email + bell)',      dk: true,  gs: false },
-            { label: 'Verified seller trust badge',           dk: true,  gs: false },
-            { label: 'Saathi tools for shop owners',          dk: true,  gs: false },
-            { label: 'Global product coverage',               dk: false, gs: true  },
-          ].map((row, i) => (
-            <div key={i} className={`grid grid-cols-3 text-sm border-b border-line last:border-0 ${i % 2 === 0 ? 'bg-surface' : 'bg-cream-soft/40'}`}>
-              <div className="px-3 sm:px-5 py-3 text-ink">{row.label}</div>
-              <div className="px-3 sm:px-5 py-3 inline-flex items-center gap-1.5">
-                {row.dk ? <Check className="w-4 h-4 text-green" /> : <X className="w-4 h-4 text-ink/30" />}
-                <span className={row.dk ? 'text-ink font-semibold' : 'text-ink/40'}>{row.dk ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="px-3 sm:px-5 py-3 inline-flex items-center gap-1.5">
-                {row.gs ? <Check className="w-4 h-4 text-ink/50" /> : <X className="w-4 h-4 text-ink/30" />}
-                <span className="text-ink/55">{row.gs ? 'Yes' : 'No'}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Damkemon Protect — buyer-trust spotlight (animated).
+          See components/ProtectShowcase.jsx */}
+      <ProtectShowcase />
 
       {/* Saathi cross-sell — primary funnel for the seller side of the
           two-sided marketplace. Placed after "why us" so visitors who came
