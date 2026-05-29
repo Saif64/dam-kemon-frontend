@@ -87,6 +87,8 @@ export const getTrendingSearches = (limit = 10) =>
   api.get('/stats/trending', { params: { limit } });
 export const getHotDrops = (limit = 12) =>
   api.get('/stats/hot-drops', { params: { limit } });
+export const getWorldCup = (limit = 12) =>
+  api.get('/stats/world-cup', { params: { limit } });
 
 /** Public shop submission. */
 export const submitShop = (payload) => api.post('/shops/submit', payload);

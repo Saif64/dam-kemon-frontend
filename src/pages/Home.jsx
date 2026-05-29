@@ -7,6 +7,7 @@ import TrendingStrip from '../components/TrendingStrip';
 import HotDropsRail from '../components/HotDropsRail';
 import RecentlyViewedRail from '../components/RecentlyViewedRail';
 import ProtectShowcase from '../components/ProtectShowcase';
+import WorldCupRail from '../components/WorldCupRail';
 import {
   Sparkles, Database, ShieldCheck, Store, ArrowRight, Crown,
   Radio, MessageSquare, BadgeCheck, ShoppingBag,
@@ -84,6 +85,8 @@ export default function Home() {
       <TrendingStrip />
 
       <RecentlyViewedRail />
+
+      <WorldCupRail />
 
       <HotDropsRail />
 
