@@ -8,6 +8,9 @@ import {
 
 const fmt = (p) => (p == null ? 'N/A' : '৳' + Number(p).toLocaleString('en-IN'));
 const slugOf = (sp) => sp.siteSlug || sp.siteName;
+// Prefer the real marketplace sub-seller (e.g. a Daraz storefront), noting the
+// marketplace it sits on; first-party shops just show their name.
+const sellerLabel = (sp) => (sp.sellerName ? `${sp.sellerName} · ${sp.siteName}` : sp.siteName);
 
 /**
  * The decision layer, distilled. Instead of leaving the buyer to eyeball a
@@ -58,7 +61,7 @@ export default function SmartVerdict({ product, trust = {} }) {
           tone="text-green"
           q="Where is it cheapest?"
           a={fmt(lowest)}
-          sub={<>on <b className="text-ink">{cheapest.siteName}</b>{multi ? ` · ${prices.length} sellers compared` : ''}</>}
+          sub={<>on <b className="text-ink">{sellerLabel(cheapest)}</b>{multi ? ` · ${prices.length} sellers compared` : ''}</>}
         />
 
         {/* Smart buy */}
@@ -66,7 +69,7 @@ export default function SmartVerdict({ product, trust = {} }) {
           icon={Award}
           tone="text-ink"
           q="What's the smart buy?"
-          a={sameAsCheapest ? 'Cheapest = best value' : recommended.siteName}
+          a={sameAsCheapest ? 'Cheapest = best value' : sellerLabel(recommended)}
           sub={sameAsCheapest
             ? <>the lowest price is also the most trustworthy here</>
             : <>just <b className="text-ink">{fmt(Math.abs(diff))}</b> more for {tier ? `${tier.label.toLowerCase()} trust` : 'a safer buy'}{dtext ? ` · ${dtext}` : ''}</>}
@@ -107,7 +110,7 @@ export default function SmartVerdict({ product, trust = {} }) {
           tone="text-ink"
           q="What if I need to return it?"
           a={recT ? returnText(recT) : '—'}
-          sub={recT ? <>at {recommended.siteName}</> : <>check the seller's policy</>}
+          sub={recT ? <>at {sellerLabel(recommended)}</> : <>check the seller's policy</>}
         />
       </div>
 

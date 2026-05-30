@@ -78,6 +78,13 @@ export const compareProducts = (ids) =>
 export const getSellers = (params = {}) =>
   api.get('/sellers', { params });
 
+/**
+ * Public directory of indexed shops (active shops + catalog size). Powers the
+ * shop-vs-shop comparison picker. Trust/delivery signals for selected shops
+ * come from getShopTrust().
+ */
+export const getShops = () => api.get('/shops');
+
 export const getSeller = (id) =>
   api.get(`/sellers/${id}`);
 
@@ -191,11 +198,14 @@ export const accountSearchHistory = () => api.get('/account/search-history');
  * the search query when known so attribution analytics know what led to
  * the click.
  */
-export const affiliateUrl = (productId, siteSlug, fromQuery) => {
+export const affiliateUrl = (productId, siteSlug, fromQuery, offerUrl) => {
   if (!productId) return '#';
   const base = `${baseURL}/r/${encodeURIComponent(productId)}`;
   const params = new URLSearchParams();
   if (siteSlug) params.set('site', siteSlug);
+  // Specific offer URL — disambiguates between multiple sellers of the same
+  // product within one marketplace (e.g. two Daraz storefronts).
+  if (offerUrl) params.set('u', offerUrl);
   if (fromQuery) params.set('q', fromQuery);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;

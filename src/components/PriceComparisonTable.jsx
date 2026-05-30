@@ -9,6 +9,12 @@ function formatPrice(price) {
   return '৳' + Number(price).toLocaleString('en-IN');
 }
 
+function fmtSold(n) {
+  if (!n) return null;
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k';
+  return String(n);
+}
+
 const sellerBadges = {
   Daraz: { label: 'Mall', color: 'bg-red text-white' },
   Startech: { label: 'Official', color: 'bg-ink text-cream' },
@@ -133,12 +139,14 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1">
-                  <h4 className="font-semibold text-ink text-sm sm:text-[15px] truncate">{it.siteName || 'Unknown Seller'}</h4>
-                  {badge && (
+                  <h4 className="font-semibold text-ink text-sm sm:text-[15px] truncate">{it.sellerName || it.siteName || 'Unknown Seller'}</h4>
+                  {it.sellerName ? (
+                    <span className="text-[10px] font-mono text-gray shrink-0">via {it.siteName}</span>
+                  ) : badge ? (
                     <span className={`text-[9px] sm:text-[10px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-md ${badge.color}`}>
                       {badge.label}
                     </span>
-                  )}
+                  ) : null}
                   {isFb && (
                     <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-blue text-white">
                       Facebook
@@ -180,6 +188,11 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
                       −{discount}%
                     </span>
                   )}
+                  {it.soldCount > 0 && (
+                    <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-cream-soft text-ink/60">
+                      {fmtSold(it.soldCount)} sold
+                    </span>
+                  )}
                 </div>
 
                 {/* Trust / delivery / genuineness signals */}
@@ -195,7 +208,7 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
                 )}
                 <a
                   href={productId
-                    ? affiliateUrl(productId, it.siteSlug || it.siteName)
+                    ? affiliateUrl(productId, it.siteSlug || it.siteName, undefined, it.productUrl)
                     : (it.productUrl || '#')}
                   target="_blank"
                   rel="noopener noreferrer sponsored"

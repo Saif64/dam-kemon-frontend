@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Scale, Megaphone, Sparkles } from 'lucide-react';
+import { ExternalLink, Crown, Store, Star, TrendingDown, MessageSquare, ChevronRight, Megaphone, Sparkles } from 'lucide-react';
 import { trackClick } from '../api/analytics';
 import { affiliateUrl } from '../api/api';
-import { toggle, inQueue, subscribe } from '../api/compareQueue';
 import TrustBadge from './TrustBadge';
 
 function fmt(p) {
@@ -11,28 +9,20 @@ function fmt(p) {
   return '৳' + Number(p).toLocaleString('en-IN');
 }
 
-function hostOf(url) {
-  if (!url) return null;
-  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
-}
+// Seller rows surfaced directly on the card; the rest live on the detail page.
+const VISIBLE_SELLERS = 4;
 
 /**
  * Product-centric card. Each card represents ONE product (deduped across
- * shops by MinHash/LSH at index time). The card leads with:
- *  - product info (image, name, category)
- *  - rating + review count
- *  - "N sellers compared" badge — the value prop of the whole product
- *  - price range across sellers (if N>1) or single price
- *
- * Primary CTA is always "Compare {N} prices" — it takes the user to
- * ProductDetail where the full seller table lives. Per-seller "Buy"
- * links are demoted to small chips at the bottom; the card itself is
- * the unit of value, not any single seller.
+ * shops by MinHash/LSH at index time). On a price-comparison site the sellers
+ * ARE the value, so the card leads with product info + rating, then makes the
+ * full seller line-up the headline block: every shop offering the product,
+ * ranked cheapest-first, each price tappable straight through to the shop.
+ * The cheapest row is crowned; a "Compare N prices" CTA opens the detail page
+ * where the full trust/delivery comparison lives.
  */
 export default function SearchProductCard({ product, rank, sponsored = false, query, trust = {}, smartPick = false }) {
   const navigate = useNavigate();
-  const [staged, setStaged] = useState(inQueue(product.id));
-  useEffect(() => subscribe(() => setStaged(inQueue(product.id))), [product.id]);
   const prices = Array.isArray(product.prices) ? [...product.prices] : [];
   prices.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
   const cheapest = prices[0];
@@ -41,7 +31,7 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
   const isMulti = sellerCount > 1;
   const savings = cheapest && highest && highest.price > cheapest.price
     ? highest.price - cheapest.price : 0;
-  const savingsPct = savings && cheapest?.price
+  const savingsPct = savings && highest?.price
     ? Math.round((savings / highest.price) * 100) : 0;
 
   const detailHref = `/product/${product.id || product.slug || ''}`;
@@ -85,17 +75,7 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
               <Crown className="w-3 h-3 text-yellow" /> Best match
             </div>
           )}
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id); }}
-            className={`absolute top-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-full backdrop-blur transition-colors ${
-              staged ? 'bg-lime text-ink shadow-[0_4px_12px_-2px_rgba(190,242,100,0.6)]' : 'bg-white/90 text-ink/60 hover:text-ink'
-            }`}
-            title={staged ? 'Remove from compare' : 'Add to compare'}
-            aria-label="Toggle compare"
-          >
-            <Scale className="w-3.5 h-3.5" />
-          </button>
-          {/* Headline seller badge — the cross-shop value prop */}
+          {/* Headline seller-count badge — the cross-shop value prop */}
           <div className={`absolute bottom-2 left-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold ${
             isMulti
               ? 'bg-green text-white shadow-[0_4px_12px_-2px_rgba(15,77,42,0.4)]'
@@ -138,91 +118,91 @@ export default function SearchProductCard({ product, rank, sponsored = false, qu
             )}
           </div>
 
-          {/* Price block — front and centre */}
+          {/* Sellers — the headline. Every shop, ranked cheapest-first, each
+              price tappable straight through to the seller. */}
           {cheapest && (
-            <div className="mt-auto pt-2">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-gray mb-1">
-                {isMulti ? 'From' : 'Price'}
-              </div>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className={`font-mono font-bold leading-none ${isMulti ? 'text-green text-2xl sm:text-3xl' : 'text-ink text-xl sm:text-2xl'}`}>
-                  {fmt(cheapest.price)}
-                </span>
-                {isMulti && (
-                  <>
-                    <span className="text-gray text-sm">– {fmt(highest.price)}</span>
-                    {savingsPct >= 5 && (
-                      <span className="inline-flex items-center gap-0.5 bg-lime/30 text-green text-[11px] font-mono font-bold px-2 py-0.5 rounded-full">
-                        <TrendingDown className="w-3 h-3" /> save {savingsPct}%
-                      </span>
-                    )}
-                  </>
-                )}
-                {!isMulti && cheapest.originalPrice != null && cheapest.originalPrice > cheapest.price && (
-                  <span className="font-mono text-sm text-gray-soft line-through">{fmt(cheapest.originalPrice)}</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-2 gap-3">
-                <div className="text-[12px] text-gray inline-flex items-center gap-1.5">
+            <div className="mt-auto pt-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-gray inline-flex items-center gap-1">
                   <Store className="w-3.5 h-3.5" />
-                  {isMulti
+                  {isMulti ? `Compare ${sellerCount} sellers` : '1 seller'}
+                </span>
+                {isMulti && savingsPct >= 5 && (
+                  <span className="inline-flex items-center gap-0.5 bg-lime/30 text-green text-[11px] font-mono font-bold px-2 py-0.5 rounded-full">
+                    <TrendingDown className="w-3 h-3" /> save {savingsPct}%
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                {prices.slice(0, VISIBLE_SELLERS).map((sp, i) => {
+                  const isCheapest = i === 0;
+                  return (
+                    <a
+                      key={`${sp.siteSlug || sp.siteName}-${i}`}
+                      href={product.id
+                        ? affiliateUrl(product.id, sp.siteSlug || sp.siteName, query, sp.productUrl)
+                        : (sp.productUrl || '#')}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      onClick={(e) => { e.stopPropagation(); trackClick(product.id, sp.siteSlug || sp.siteName); }}
+                      className={`group/seller flex items-center gap-2 rounded-xl px-2.5 py-2 border transition-colors ${
+                        isCheapest
+                          ? 'bg-lime/20 border-lime/50 hover:bg-lime/30'
+                          : 'bg-white border-line hover:border-line-strong'
+                      }`}
+                    >
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
+                        isCheapest ? 'bg-green text-white' : 'bg-cream-soft text-ink/50'
+                      }`}>
+                        {isCheapest ? <Crown className="w-3 h-3 text-yellow" /> : i + 1}
+                      </span>
+                      <span className="flex-1 min-w-0 inline-flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold text-ink truncate">{sp.sellerName || sp.siteName || 'Unknown'}</span>
+                        {sp.sellerName && (
+                          <span className="hidden lg:inline text-[10px] text-gray font-mono shrink-0">· {sp.siteName}</span>
+                        )}
+                        {isCheapest && (
+                          <span className="hidden sm:inline text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-green text-white">Lowest</span>
+                        )}
+                        {sp.inStock === false && (
+                          <span className="text-[9px] font-mono font-bold uppercase text-red">out</span>
+                        )}
+                      </span>
+                      <span className={`font-mono text-sm font-bold shrink-0 ${isCheapest ? 'text-green' : 'text-ink'}`}>
+                        {fmt(sp.price)}
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-gray-soft shrink-0 group-hover/seller:text-ink transition-colors" />
+                    </a>
+                  );
+                })}
+              </div>
+
+              {/* Trust on the cheapest seller (the one most will click) */}
+              {cheapestTrust && (
+                <div className="mt-2">
+                  <TrustBadge trust={cheapestTrust} variant="compact" />
+                </div>
+              )}
+
+              {/* CTA into the full comparison */}
+              <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-line">
+                <span className="text-[12px] text-gray">
+                  {sellerCount > VISIBLE_SELLERS
+                    ? <>+{sellerCount - VISIBLE_SELLERS} more {sellerCount - VISIBLE_SELLERS === 1 ? 'seller' : 'sellers'}</>
+                    : isMulti
                     ? <>Cheapest at <span className="font-semibold text-ink">{cheapest.siteName}</span></>
                     : <>Only on <span className="font-semibold text-ink">{cheapest.siteName}</span></>}
-                </div>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink/80 group-hover:text-red transition-colors">
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink/80 group-hover:text-red transition-colors shrink-0">
                   {isMulti ? `Compare ${sellerCount} prices` : 'View details'}
                   <ChevronRight className="w-4 h-4" />
                 </span>
               </div>
-              {cheapestTrust && (
-                <div className="mt-2 pt-2 border-t border-line">
-                  <TrustBadge trust={cheapestTrust} variant="compact" />
-                </div>
-              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* Seller strip — small inline chips below, not the focus */}
-      {isMulti && (
-        <div className="border-t border-line bg-cream-soft/30 px-4 sm:px-5 py-2.5">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-gray shrink-0">All sellers:</span>
-            {prices.slice(0, 6).map((sp, i) => {
-              const host = hostOf(sp.productUrl);
-              return (
-                <a
-                  key={`${sp.siteSlug || sp.siteName}-${i}`}
-                  href={product.id
-                    ? affiliateUrl(product.id, sp.siteSlug || sp.siteName, query)
-                    : (sp.productUrl || '#')}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    trackClick(product.id, sp.siteSlug || sp.siteName);
-                  }}
-                  className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-mono px-2 py-1 rounded-full whitespace-nowrap transition-colors ${
-                    i === 0
-                      ? 'bg-green/15 text-green font-bold hover:bg-green/25'
-                      : 'bg-white text-ink/70 border border-line hover:border-ink hover:text-ink'
-                  }`}
-                  title={host || sp.siteName}
-                >
-                  {i === 0 && <Crown className="w-3 h-3 text-yellow" />}
-                  <span className="truncate max-w-[100px]">{sp.siteName}</span>
-                  <span className="font-bold">{fmt(sp.price)}</span>
-                  <ExternalLink className="w-2.5 h-2.5 opacity-50" />
-                </a>
-              );
-            })}
-            {prices.length > 6 && (
-              <span className="text-[11px] text-gray shrink-0">+{prices.length - 6} more</span>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

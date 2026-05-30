@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getAllProducts, getShopTrust, getCategories } from '../api/api';
 import SearchProductCard from '../components/SearchProductCard';
 import SearchProductCardSkeleton from '../components/SearchProductCardSkeleton';
-import { LayoutGrid, ArrowUpDown, PackageSearch, AlertTriangle, RefreshCw } from 'lucide-react';
+import { LayoutGrid, ArrowUpDown, PackageSearch, AlertTriangle, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Collapsed chip rail height — roughly two rows of py-2 chips + the gap.
+const CHIPS_COLLAPSED = '4.75rem';
 
 const PAGE_SIZE = 24;
 
@@ -27,10 +30,24 @@ export default function Browse() {
   const [showSort, setShowSort] = useState(false);
   const [trust, setTrust] = useState({});
   const [categories, setCategories] = useState([]);
+  const [chipsExpanded, setChipsExpanded] = useState(false);
+  const [chipsOverflow, setChipsOverflow] = useState(false);
+  const chipsRef = useRef(null);
 
   useEffect(() => {
     getCategories().then((r) => { if (Array.isArray(r.data)) setCategories(r.data); }).catch(() => {});
   }, []);
+
+  // Decide whether the "show more" toggle is needed: does the full chip set
+  // exceed the collapsed two-line cap? Re-measures on category load + resize.
+  useLayoutEffect(() => {
+    const el = chipsRef.current;
+    if (!el) return;
+    const measure = () => setChipsOverflow(el.scrollHeight > 88);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [categories]);
 
   const loadPage = (p, cat, replace) => {
     setLoading(true);
@@ -128,12 +145,28 @@ export default function Browse() {
         </div>
       </div>
 
-      {/* Category chips */}
-      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 mb-4 sm:mb-5">
-        <Chip active={!category} onClick={() => setCategory('')}>All</Chip>
-        {categories.map((c) => (
-          <Chip key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Chip>
-        ))}
+      {/* Category chips — wrap to ~2 lines, then reveal the rest on demand */}
+      <div className="mb-4 sm:mb-5">
+        <div
+          ref={chipsRef}
+          className="flex flex-wrap gap-1.5 sm:gap-2 overflow-hidden transition-[max-height] duration-300 ease-out"
+          style={{ maxHeight: chipsExpanded ? '1000px' : CHIPS_COLLAPSED }}
+        >
+          <Chip active={!category} onClick={() => setCategory('')}>All</Chip>
+          {categories.map((c) => (
+            <Chip key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Chip>
+          ))}
+        </div>
+        {chipsOverflow && (
+          <button
+            onClick={() => setChipsExpanded((v) => !v)}
+            className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-ink/70 hover:text-ink transition-colors"
+          >
+            {chipsExpanded
+              ? <>Show less <ChevronUp className="w-3.5 h-3.5" /></>
+              : <>Show all categories <ChevronDown className="w-3.5 h-3.5" /></>}
+          </button>
+        )}
       </div>
 
       {/* Content */}

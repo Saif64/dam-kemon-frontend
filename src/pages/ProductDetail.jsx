@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getProduct, getProductHistory, getDailyPriceHistory, getShopTrust, affiliateUrl } from '../api/api';
+import { getProduct, getProductHistory, getDailyPriceHistory, getShopTrust } from '../api/api';
 import { trackView } from '../api/analytics';
 import { pushRecent } from '../api/recentlyViewed';
 import { addToWishlist, removeFromWishlist, listWishlist, updateWishlistAlert } from '../api/auth';
@@ -12,7 +12,7 @@ import ReviewsPanel from '../components/ReviewsPanel';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ProductSEO from '../components/ProductSEO';
 import {
-  ArrowLeft, Star, Share2, Bell, TrendingDown, Sparkles, ShieldCheck, ExternalLink, AlertTriangle, Heart,
+  ArrowLeft, Star, Share2, Bell, ShieldCheck, Store, AlertTriangle, Heart,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -33,7 +33,6 @@ export default function ProductDetail() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(!seedProduct);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('prices');
 
   useEffect(() => {
     let cancelled = false;
@@ -196,12 +195,6 @@ export default function ProductDetail() {
   const sellerCount = product.prices?.length || 0;
   const cheapest = product.prices?.find((p) => p.price === lowestPrice);
 
-  const tabs = [
-    { id: 'prices', label: 'Prices', count: sellerCount },
-    { id: 'reviews', label: 'Reviews & Trust' },
-    { id: 'history', label: 'History' },
-  ];
-
   return (
     <div className="container-tight py-4 sm:py-6 lg:py-8">
       <ProductSEO product={product} />
@@ -212,171 +205,124 @@ export default function ProductDetail() {
         <ArrowLeft className="w-4 h-4" /> Back to results
       </button>
 
-      <div className="card-elev overflow-hidden mb-4 sm:mb-6">
-        <div className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-72 lg:w-96 aspect-[4/3] md:aspect-auto bg-gradient-to-br from-cream-soft via-cream to-yellow-soft flex items-center justify-center shrink-0 overflow-hidden">
+      {/* Slim identity header — just enough product context; the price
+          comparison leads the page since we compare prices + reviews. */}
+      <div className="card-elev p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-cream-soft via-cream to-yellow-soft flex items-center justify-center shrink-0 overflow-hidden">
             {product.imageUrl ? (
               <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
             ) : (
-              <span className="font-serif text-7xl sm:text-8xl italic text-ink/10">{(product.category || 'P')[0]}</span>
+              <span className="font-serif text-3xl italic text-ink/15">{(product.category || 'P')[0]}</span>
             )}
-            {/* Seller-count badge — the cross-shop value prop, prominent */}
-            <div className={`absolute bottom-3 left-3 sm:bottom-4 sm:left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold ${
-              sellerCount > 1
-                ? 'bg-green text-white shadow-[0_4px_12px_-2px_rgba(15,77,42,0.4)]'
-                : 'bg-white/95 text-ink/70 border border-line backdrop-blur'
-            }`}>
-              <Sparkles className="w-3 h-3" />
-              {sellerCount === 0 ? 'No sellers' : sellerCount === 1 ? '1 seller' : `${sellerCount} sellers compared`}
-            </div>
           </div>
 
-          <div className="flex-1 p-4 sm:p-6 lg:p-8">
-            {product.category && (
-              <span className="chip chip-ghost !text-[10px] mb-2.5">
-                {product.category}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              {product.category && (
+                <span className="chip chip-ghost !text-[10px] !py-0.5">{product.category}</span>
+              )}
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                sellerCount > 1 ? 'bg-green text-white' : 'bg-cream-soft text-ink/60'
+              }`}>
+                <Store className="w-3 h-3" />
+                {sellerCount === 0 ? 'No sellers' : sellerCount === 1 ? '1 seller' : `${sellerCount} sellers`}
               </span>
-            )}
+            </div>
 
-            <h1 className="font-serif text-xl sm:text-2xl lg:text-[28px] font-bold text-ink mb-3 leading-[1.15] tracking-tight">
+            <h1 className="font-serif text-lg sm:text-2xl font-bold text-ink leading-[1.15] tracking-tight line-clamp-2">
               {product.name}
             </h1>
 
-            {product.description && (
-              <p className="text-gray text-[13px] sm:text-sm leading-relaxed mb-4 max-w-2xl line-clamp-3">
-                {product.description}
-              </p>
-            )}
-
-            <div className="flex items-center gap-2 sm:gap-3 mb-5 flex-wrap">
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {product.averageRating > 0 ? (
                 <>
                   <div className="flex items-center gap-0.5">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < Math.round(product.averageRating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(product.averageRating || 0) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
                     ))}
                   </div>
                   <span className="text-ink font-semibold text-sm">{Number(product.averageRating).toFixed(1)}</span>
                   {product.totalReviews > 0 && (
-                    <span className="text-gray text-xs sm:text-sm">
-                      ({Number(product.totalReviews).toLocaleString('en-IN')} {product.totalReviews === 1 ? 'review' : 'reviews'} across all sellers)
+                    <span className="text-gray text-xs">
+                      ({Number(product.totalReviews).toLocaleString('en-IN')} {product.totalReviews === 1 ? 'review' : 'reviews'})
                     </span>
                   )}
                 </>
               ) : (
-                <span className="text-gray text-xs sm:text-sm">No reviews aggregated yet</span>
+                <span className="text-gray text-xs">No reviews aggregated yet</span>
               )}
             </div>
-
-            <div className="rounded-2xl bg-gradient-to-br from-cream-soft to-white border border-line p-3 sm:p-4 mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
-                <div>
-                  <div className="font-mono text-[10px] sm:text-[11px] uppercase tracking-wider text-gray mb-0.5">Lowest right now</div>
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-serif text-3xl sm:text-4xl font-bold italic text-red leading-none">{formatPrice(lowestPrice)}</span>
-                    {cheapest && <span className="text-xs sm:text-sm text-gray">on <span className="font-semibold text-ink">{cheapest.siteName}</span></span>}
-                  </div>
-                  {savings > 0 && (
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <span className="inline-flex items-center gap-1 bg-green/10 text-green text-[11px] sm:text-xs font-semibold px-2 py-1 rounded-full">
-                        <TrendingDown className="w-3.5 h-3.5" /> Save {formatPrice(savings)}
-                      </span>
-                      <span className="text-gray text-[11px] sm:text-xs">vs highest seller</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {cheapest && cheapest.productUrl && (
-                <a
-                  href={(product.id || id)
-                    ? affiliateUrl(product.id || id, cheapest.siteSlug || cheapest.siteName)
-                    : cheapest.productUrl}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  className="btn-accent flex-1 sm:flex-none"
-                >
-                  Buy from {cheapest.siteName} <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-              <Link
-                to={`/protect?productId=${encodeURIComponent(product.id || id)}&shopSlug=${encodeURIComponent(cheapest?.siteSlug || cheapest?.siteName || '')}&itemName=${encodeURIComponent(product.name || '')}&amount=${lowestPrice || ''}`}
-                className="btn-ghost"
-                title="Check scam risk & open a protected order"
-              >
-                <ShieldCheck className="w-4 h-4 text-green" /> Buy Protected
-              </Link>
-              <button
-                onClick={toggleWishlist}
-                disabled={wishlistBusy}
-                className={`btn-ghost ${inWishlist ? 'text-red' : ''}`}
-                title={user ? (inWishlist ? 'Remove from wishlist' : 'Add to wishlist') : 'Sign in to save'}
-              >
-                <Heart className={`w-4 h-4 ${inWishlist ? 'fill-red' : ''}`} />
-                {inWishlist ? 'Saved' : 'Wishlist'}
-              </button>
-              <button
-                onClick={openTrackPrice}
-                className={`btn-ghost ${alertSettings.alertsEnabled ? 'text-green' : ''}`}
-                title={alertSettings.alertsEnabled ? 'Edit price drop alert' : 'Notify me when price drops'}
-              >
-                <Bell className={`w-4 h-4 ${alertSettings.alertsEnabled ? 'fill-green/30' : ''}`} />
-                {alertSettings.alertsEnabled ? 'Tracking' : 'Track price'}
-              </button>
-              <button
-                onClick={() => {
-                  const url = window.location.href;
-                  if (navigator.share) navigator.share({ title: product.name, url }).catch(() => {});
-                  else navigator.clipboard?.writeText(url);
-                }}
-                className="btn-ghost"
-              >
-                <Share2 className="w-4 h-4" /> Share
-              </button>
-            </div>
-
-            {sellerCount > 0 && (
-              <p className="text-gray text-xs mt-4 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-green" />
-                Available from <span className="font-semibold text-ink">{sellerCount}</span> {sellerCount === 1 ? 'seller' : 'sellers'}
-              </p>
-            )}
           </div>
+        </div>
+
+        {/* Actions — buying happens in the price comparison rows below */}
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-line">
+          <button
+            onClick={toggleWishlist}
+            disabled={wishlistBusy}
+            className={`btn-ghost ${inWishlist ? 'text-red' : ''}`}
+            title={user ? (inWishlist ? 'Remove from wishlist' : 'Add to wishlist') : 'Sign in to save'}
+          >
+            <Heart className={`w-4 h-4 ${inWishlist ? 'fill-red' : ''}`} />
+            {inWishlist ? 'Saved' : 'Wishlist'}
+          </button>
+          <button
+            onClick={openTrackPrice}
+            className={`btn-ghost ${alertSettings.alertsEnabled ? 'text-green' : ''}`}
+            title={alertSettings.alertsEnabled ? 'Edit price drop alert' : 'Notify me when price drops'}
+          >
+            <Bell className={`w-4 h-4 ${alertSettings.alertsEnabled ? 'fill-green/30' : ''}`} />
+            {alertSettings.alertsEnabled ? 'Tracking' : 'Track price'}
+          </button>
+          <button
+            onClick={() => {
+              const url = window.location.href;
+              if (navigator.share) navigator.share({ title: product.name, url }).catch(() => {});
+              else navigator.clipboard?.writeText(url);
+            }}
+            className="btn-ghost"
+          >
+            <Share2 className="w-4 h-4" /> Share
+          </button>
+          <Link
+            to={`/protect?productId=${encodeURIComponent(product.id || id)}&shopSlug=${encodeURIComponent(cheapest?.siteSlug || cheapest?.siteName || '')}&itemName=${encodeURIComponent(product.name || '')}&amount=${lowestPrice || ''}`}
+            className="btn-ghost"
+            title="Check scam risk & open a protected order"
+          >
+            <ShieldCheck className="w-4 h-4 text-green" /> Buy Protected
+          </Link>
         </div>
       </div>
 
+      {/* 1 — Price comparison: the lead. We're a price + review comparison site. */}
+      <section className="mb-6 sm:mb-8">
+        <div className="mb-3">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink leading-tight">Price comparison</h2>
+          <p className="text-[11px] sm:text-xs text-gray font-mono mt-0.5">
+            {sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'} · lowest {formatPrice(lowestPrice)}
+            {savings > 0 && <> · save {formatPrice(savings)} vs highest</>}
+          </p>
+        </div>
+        <PriceComparisonTable prices={product.prices || []} productId={product.id || id} trust={trust} />
+      </section>
+
+      {/* 2 — Smart verdict (carries its own card header + margin) */}
       <SmartVerdict product={product} trust={trust} />
 
-      <div className="flex gap-1 bg-white border border-line rounded-full p-1 mb-4 sm:mb-6 overflow-x-auto no-scrollbar sticky top-14 sm:top-16 z-10 shadow-[var(--shadow-soft)]">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all inline-flex items-center justify-center gap-1.5 ${
-              activeTab === tab.id ? 'bg-ink text-cream shadow-sm' : 'text-gray hover:text-ink'
-            }`}
-          >
-            {tab.label}
-            {tab.count !== undefined && (
-              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${activeTab === tab.id ? 'bg-cream/10' : 'bg-ink/5'}`}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* 3 — Reviews & trust */}
+      <section className="mb-6 sm:mb-8">
+        <div className="mb-3">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold italic text-ink leading-tight">Reviews &amp; trust</h2>
+          <p className="text-[11px] sm:text-xs text-gray font-mono mt-0.5">What buyers say across every seller</p>
+        </div>
+        <ReviewsPanel productId={product.id || id} product={product} onTrustUpdated={onTrustUpdated} />
+      </section>
 
-      <div className="animate-fade-in">
-        {activeTab === 'prices' && (
-          <PriceComparisonTable prices={product.prices || []} productId={product.id || id} trust={trust} />
-        )}
-        {activeTab === 'reviews' && (
-          <ReviewsPanel productId={product.id || id} product={product} onTrustUpdated={onTrustUpdated} />
-        )}
-        {activeTab === 'history' && <PriceHistoryChart history={history} dailySeries={dailySeries} />}
-      </div>
+      {/* 4 — Price history */}
+      <section className="mb-2">
+        <PriceHistoryChart history={history} dailySeries={dailySeries} />
+      </section>
 
       {alertModalOpen && (
         <div
