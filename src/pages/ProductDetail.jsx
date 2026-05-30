@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { getProduct, getProductHistory, getDailyPriceHistory, getShopTrust } from '../api/api';
+import { getProduct, getProductHistory, getDailyPriceHistory, getShopTrust, getSellerTrust } from '../api/api';
 import { trackView } from '../api/analytics';
 import { pushRecent } from '../api/recentlyViewed';
 import { addToWishlist, removeFromWishlist, listWishlist, updateWishlistAlert } from '../api/auth';
@@ -150,6 +150,18 @@ export default function ProductDetail() {
     if (slugs.length === 0) { setTrust({}); return; }
     let alive = true;
     getShopTrust(slugs).then((r) => { if (alive && r.data) setTrust(r.data); }).catch(() => {});
+    return () => { alive = false; };
+  }, [product?.id, id]);
+
+  // Per-seller reputation for marketplace sub-sellers (Daraz storefronts, etc),
+  // keyed by sellerId — real, data-derived scores so we can rank one Daraz
+  // seller against another, not just show the marketplace's blanket score.
+  const [sellerTrust, setSellerTrust] = useState({});
+  useEffect(() => {
+    const ids = [...new Set((product?.prices || []).map((p) => p.sellerId).filter(Boolean))];
+    if (ids.length === 0) { setSellerTrust({}); return; }
+    let alive = true;
+    getSellerTrust(ids).then((r) => { if (alive && r.data) setSellerTrust(r.data); }).catch(() => {});
     return () => { alive = false; };
   }, [product?.id, id]);
 
@@ -304,7 +316,7 @@ export default function ProductDetail() {
             {savings > 0 && <> · save {formatPrice(savings)} vs highest</>}
           </p>
         </div>
-        <PriceComparisonTable prices={product.prices || []} productId={product.id || id} trust={trust} />
+        <PriceComparisonTable prices={product.prices || []} productId={product.id || id} trust={trust} sellerTrust={sellerTrust} />
       </section>
 
       {/* 2 — Smart verdict (carries its own card header + margin) */}

@@ -108,6 +108,13 @@ export const submitShop = (payload) => api.post('/shops/submit', payload);
 export const getShopTrust = (slugs) =>
   api.get('/trust/shops', { params: { slugs: Array.isArray(slugs) ? slugs.join(',') : slugs } });
 
+/**
+ * Per-seller reputation for marketplace sub-sellers (e.g. Daraz storefronts),
+ * keyed by sellerId. Returns a sellerId→profile map; unknown ids are omitted.
+ */
+export const getSellerTrust = (ids) =>
+  api.get('/trust/sellers', { params: { ids: Array.isArray(ids) ? ids.join(',') : ids } });
+
 /** Community + scraped reviews for a product, newest first. */
 export const getProductReviews = (idOrSlug) =>
   api.get(`/products/${idOrSlug}/reviews`);

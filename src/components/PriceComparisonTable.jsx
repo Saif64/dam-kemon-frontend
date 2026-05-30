@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ExternalLink, Star, Check, Crown, Award, Info } from 'lucide-react';
+import { ExternalLink, Star, Crown, Award, Info, ShieldCheck, Truck } from 'lucide-react';
 import { trackClick } from '../api/analytics';
 import { affiliateUrl } from '../api/api';
-import TrustBadge, { valueScore } from './TrustBadge';
+import { tierOf, valueScore, deliveryText } from './TrustBadge';
 
 function formatPrice(price) {
   if (!price && price !== 0) return 'N/A';
@@ -29,15 +29,23 @@ function isFacebookSeller(name) {
 }
 
 const slugOf = (it) => it.siteSlug || it.siteName;
+const offerKey = (it, i) => it.productUrl || `${slugOf(it)}#${it.sellerId || i}`;
 
 /**
- * Per-seller comparison. Beyond price, each row surfaces the seller's trust
- * score, delivery estimate, COD, returns and genuineness (via TrustBadge).
- * The sort toggle lets buyers rank by raw price OR by "best value" — a blend
- * of price, trust, delivery and returns — because the cheapest seller isn't
- * always the smart buy.
+ * Per-seller comparison as a responsive card GRID — sellers tile across the
+ * width (3-up desktop / 2-up tablet / 1-up mobile) instead of one tall column,
+ * so a product with many sellers stays compact and scannable. Each card carries
+ * the decision signals beyond price:
+ *
+ *  - For a marketplace sub-seller (e.g. a Daraz storefront) we show that
+ *    SELLER's own reputation (`sellerTrust`, computed from real scraped ratings
+ *    + sales) plus this listing's rating and units sold.
+ *  - For a first-party shop we show the shop's trust score, delivery and COD.
+ *
+ * The sort toggle ranks by raw price or by "best value" — a blend of price,
+ * trust, delivery and returns. The #1 card in the current order is featured.
  */
-export default function PriceComparisonTable({ prices = [], productId, trust = {} }) {
+export default function PriceComparisonTable({ prices = [], productId, trust = {}, sellerTrust = {} }) {
   const [sortMode, setSortMode] = useState('price'); // 'price' | 'value'
 
   const lowestPrice = useMemo(() => {
@@ -45,18 +53,12 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
     return vals.length ? Math.min(...vals) : null;
   }, [prices]);
 
-  const enriched = useMemo(() => prices.map((it) => {
-    const t = trust[slugOf(it)] || null;
-    return { it, t, value: valueScore({ price: it.price, lowestPrice, trust: t }) };
-  }), [prices, trust, lowestPrice]);
-
-  const bestValueSlug = useMemo(() => {
-    let best = null, bestScore = -Infinity;
-    enriched.forEach(({ it, value }) => {
-      if (value > bestScore) { bestScore = value; best = slugOf(it); }
-    });
-    return best;
-  }, [enriched]);
+  const enriched = useMemo(() => prices.map((it, i) => {
+    const mt = trust[slugOf(it)] || null;                                   // marketplace / shop trust
+    const st = it.sellerId ? (sellerTrust[it.sellerId] || null) : null;     // per-seller reputation
+    const effTrust = st ? { ...(mt || {}), trustScore: st.trustScore } : mt; // blend for best-value
+    return { it, mt, st, key: offerKey(it, i), value: valueScore({ price: it.price, lowestPrice, trust: effTrust }) };
+  }), [prices, trust, sellerTrust, lowestPrice]);
 
   const sorted = useMemo(() => {
     const arr = [...enriched];
@@ -73,10 +75,11 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
     );
   }
 
-  const hasTrust = Object.keys(trust).length > 0;
+  const hasTrust = Object.keys(trust).length > 0 || Object.keys(sellerTrust).length > 0;
+  const topIsValue = sortMode === 'value';
 
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-3">
       {/* Sort toggle + what "best value" means */}
       {prices.length > 1 && (
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -95,140 +98,112 @@ export default function PriceComparisonTable({ prices = [], productId, trust = {
           </div>
           {hasTrust && (
             <span className="text-[11px] text-gray font-mono inline-flex items-center gap-1">
-              <Info className="w-3 h-3" /> Best value weighs trust, delivery &amp; returns — not just price
+              <Info className="w-3 h-3" /> Best value weighs seller trust, delivery &amp; returns — not just price
             </span>
           )}
         </div>
       )}
 
-      {sorted.map(({ it, t }, idx) => {
-        const slug = slugOf(it);
-        const isCheapest = it.price === lowestPrice;
-        const isBestValue = slug === bestValueSlug && hasTrust;
-        const isTop = idx === 0;
-        const isFb = isFacebookSeller(it.siteName);
-        const discount = it.originalPrice && it.price
-          ? Math.round(((it.originalPrice - it.price) / it.originalPrice) * 100) : 0;
-        const badge = sellerBadges[it.siteName];
-        const topIsValue = sortMode === 'value';
+      {/* Seller grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {sorted.map(({ it, mt, st, key }, idx) => {
+          const isTop = idx === 0;
+          const isFb = isFacebookSeller(it.siteName);
+          const discount = it.originalPrice && it.price
+            ? Math.round(((it.originalPrice - it.price) / it.originalPrice) * 100) : 0;
+          const badge = sellerBadges[it.siteName];
+          const name = it.sellerName || it.siteName || 'Unknown Seller';
+          const score = st ? st.trustScore : (mt ? mt.trustScore : null);
+          const tier = score != null ? tierOf(score) : null;
+          const dtext = mt ? deliveryText(mt) : null;
 
-        return (
-          <div
-            key={idx}
-            className={`group relative rounded-2xl p-3 sm:p-4 lg:p-5 transition-all duration-300 ${
-              isTop
-                ? 'bg-gradient-to-br from-lime/40 via-lime/20 to-cream border-[1.5px] border-ink shadow-[0_10px_30px_-10px_rgba(15,77,42,0.25)]'
-                : isFb
-                ? 'bg-blue-soft/30 border border-blue/20 hover:border-blue/40 hover:bg-blue-soft/40'
-                : 'bg-white border border-line hover:border-line-strong hover:shadow-[var(--shadow-card)]'
-            }`}
-          >
-            {isTop && (
-              <div className="absolute -top-3 left-4 sm:left-5 inline-flex items-center gap-1 bg-ink text-cream px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider">
-                {topIsValue
-                  ? <><Award className="w-3 h-3 text-lime" /> Best Value</>
-                  : <><Crown className="w-3 h-3 text-yellow" /> Best Price</>}
+          return (
+            <a
+              key={key}
+              href={productId
+                ? affiliateUrl(productId, it.siteSlug || it.siteName, undefined, it.productUrl)
+                : (it.productUrl || '#')}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              onClick={() => trackClick(productId, it.siteSlug || it.siteName)}
+              className={`group flex flex-col rounded-2xl border p-4 transition-all ${
+                isTop
+                  ? 'bg-green-soft border-[1.5px] border-ink'
+                  : isFb
+                  ? 'bg-blue-soft/30 border border-blue/20 hover:border-blue/40'
+                  : 'bg-white border border-line hover:border-line-strong hover:shadow-[var(--shadow-soft)]'
+              }`}
+            >
+              {/* Header: seller + status / rank */}
+              <div className="flex items-start justify-between gap-2">
+                <h4 className="font-serif text-lg sm:text-xl font-bold text-ink leading-tight">{name}</h4>
+                {isTop ? (
+                  <span className="shrink-0 inline-flex items-center gap-1 bg-ink text-cream text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    {topIsValue ? <><Award className="w-3 h-3 text-lime" /> Best value</> : 'Lowest'}
+                  </span>
+                ) : (
+                  <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-cream-soft text-ink/40 font-mono text-xs font-bold">
+                    {idx + 1}
+                  </span>
+                )}
               </div>
-            )}
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className={`hidden sm:flex items-center justify-center font-serif text-2xl lg:text-3xl font-bold italic w-9 lg:w-11 h-9 lg:h-11 rounded-full shrink-0 ${
-                isTop ? 'bg-ink text-cream' : 'bg-cream-soft text-ink/40'
-              }`}>
-                {idx + 1}
+
+              {/* Marketplace / shop tag */}
+              <div className="mt-0.5 mb-2.5">
+                {it.sellerName ? (
+                  <span className="text-[11px] font-mono text-gray">via {it.siteName}</span>
+                ) : badge ? (
+                  <span className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${badge.color}`}>{badge.label}</span>
+                ) : isFb ? (
+                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-blue text-white">Facebook</span>
+                ) : (
+                  <span className="text-[11px] font-mono text-gray">{it.siteName}</span>
+                )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1">
-                  <h4 className="font-semibold text-ink text-sm sm:text-[15px] truncate">{it.sellerName || it.siteName || 'Unknown Seller'}</h4>
-                  {it.sellerName ? (
-                    <span className="text-[10px] font-mono text-gray shrink-0">via {it.siteName}</span>
-                  ) : badge ? (
-                    <span className={`text-[9px] sm:text-[10px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-md ${badge.color}`}>
-                      {badge.label}
-                    </span>
-                  ) : null}
-                  {isFb && (
-                    <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-blue text-white">
-                      Facebook
-                    </span>
-                  )}
-                </div>
-
+              {/* Signals */}
+              <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap text-[12px] text-gray mb-3">
+                {tier && (
+                  <span className={`inline-flex items-center gap-1 font-mono font-bold ${tier.text}`} title={`${st ? 'Seller' : 'Shop'} trust ${score}/100 · ${tier.label}`}>
+                    <ShieldCheck className="w-3.5 h-3.5" />{score}
+                    <span className="font-sans font-normal text-gray">{tier.label.toLowerCase()}</span>
+                  </span>
+                )}
                 {it.rating != null && it.rating > 0 && (
-                  <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${i < Math.round(it.rating) ? 'text-yellow fill-yellow' : 'text-line-strong'}`} />
-                    ))}
-                    <span className="text-[10px] sm:text-[11px] text-gray ml-0.5 font-mono">{Number(it.rating).toFixed(1)}</span>
-                    {it.reviewCount > 0 && (
-                      <span className="text-[10px] sm:text-[11px] text-gray-soft ml-1">({it.reviewCount})</span>
-                    )}
+                  <span className="inline-flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 text-yellow fill-yellow" />{Number(it.rating).toFixed(1)}
+                    {it.reviewCount > 0 && <span className="text-gray-soft">({it.reviewCount})</span>}
+                    {it.soldCount > 0 && <span className="text-gray-soft">· {fmtSold(it.soldCount)} sold</span>}
+                  </span>
+                )}
+                {dtext && (
+                  <span className="inline-flex items-center gap-1"><Truck className="w-3.5 h-3.5" />{dtext}</span>
+                )}
+                {mt?.codAvailable && (
+                  <span className="px-1.5 py-0.5 rounded bg-cream-soft text-ink/60 text-[10px] font-mono font-bold uppercase">COD</span>
+                )}
+                {it.inStock === false && <span className="text-red font-semibold">Out of stock</span>}
+              </div>
+
+              {/* Price + visit */}
+              <div className="mt-auto pt-3 border-t border-line flex items-end justify-between gap-2">
+                <div>
+                  <div className={`font-mono text-2xl font-bold leading-none ${isTop ? 'text-green' : 'text-ink'}`}>
+                    {formatPrice(it.price)}
                   </div>
-                )}
-
-                {/* Status tags */}
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {isCheapest && (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-green text-white">
-                      <Check className="w-3 h-3" /> Lowest price
-                    </span>
-                  )}
-                  {isBestValue && !isCheapest && (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-ink text-lime">
-                      <Award className="w-3 h-3" /> Best value
-                    </span>
-                  )}
-                  {it.inStock === false && (
-                    <span className="text-[9px] sm:text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-red-soft text-red font-bold">
-                      Out of stock
-                    </span>
-                  )}
-                  {discount > 0 && (
-                    <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-red text-white">
-                      −{discount}%
-                    </span>
-                  )}
-                  {it.soldCount > 0 && (
-                    <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-cream-soft text-ink/60">
-                      {fmtSold(it.soldCount)} sold
-                    </span>
+                  {it.originalPrice && it.originalPrice > it.price && (
+                    <div className="font-mono text-[11px] text-gray-soft line-through mt-1">{formatPrice(it.originalPrice)}</div>
                   )}
                 </div>
-
-                {/* Trust / delivery / genuineness signals */}
-                {t && <TrustBadge trust={t} variant="full" />}
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink/80 group-hover:text-red transition-colors shrink-0">
+                  {discount > 0 && <span className="text-red font-bold mr-0.5">−{discount}%</span>}
+                  Visit <ExternalLink className="w-3.5 h-3.5" />
+                </span>
               </div>
-
-              <div className="text-right shrink-0">
-                <div className={`font-mono text-base sm:text-lg lg:text-xl font-bold ${isTop ? 'text-green' : 'text-ink'}`}>
-                  {formatPrice(it.price)}
-                </div>
-                {it.originalPrice && it.originalPrice > it.price && (
-                  <div className="font-mono text-[10px] sm:text-xs text-gray-soft line-through">{formatPrice(it.originalPrice)}</div>
-                )}
-                <a
-                  href={productId
-                    ? affiliateUrl(productId, it.siteSlug || it.siteName, undefined, it.productUrl)
-                    : (it.productUrl || '#')}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  className={`inline-flex items-center gap-1 mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
-                    isTop
-                      ? 'bg-ink text-cream hover:bg-red'
-                      : 'bg-cream text-ink border border-line-strong hover:bg-ink hover:text-cream hover:border-ink'
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    trackClick(productId, it.siteSlug || it.siteName);
-                  }}
-                >
-                  Visit <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
