@@ -34,10 +34,14 @@ export default function Navbar() {
     }
   };
 
-  // Center nav stays compact (4 items) — "Dashboard" lives as a CTA button
-  // on the right so we don't double-up. The "Sell with us" link is our
-  // entry point into the Saathi seller toolkit; keep it visible because it
-  // funnels merchants who'd otherwise never find the dashboard signup.
+  // Center nav holds 6 items — "Dashboard" lives as a CTA button on the
+  // right so we don't double-up. The "Sell with us" link is our entry point
+  // into the Saathi seller toolkit; keep it visible because it funnels
+  // merchants who'd otherwise never find the dashboard signup.
+  // The pill is whitespace-nowrap + shrink-0 so it never wraps. There's no
+  // desktop search bar (it freed the room the 6-item pill needs), and the
+  // Admin/account labels collapse to icons below xl so the admin layout still
+  // fits at lg. Below lg everything moves into the hamburger menu.
   const navLinks = [
     { to: '/',          label: 'Home' },
     { to: '/browse',    label: 'Browse' },
@@ -74,49 +78,42 @@ export default function Navbar() {
             {/* Center nav (desktop) — surface bg + line-strong border auto-flip
                 with the theme; the prior bg-white/60 was literal white so it
                 rendered as a washed-out grey pill in dark mode. */}
-            <div className="hidden lg:flex items-center gap-1 bg-cream-soft border border-line-strong rounded-full px-1.5 py-1.5 shadow-[var(--shadow-soft)]">
+            <div className="hidden lg:flex items-center gap-0.5 shrink-0 bg-cream-soft border border-line-strong rounded-full px-1.5 py-1.5 shadow-[var(--shadow-soft)]">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
                   onClick={() => handleNavClick(link.to)}
-                  className="text-ink/75 hover:text-ink hover:bg-cream text-sm font-medium transition-colors px-3.5 py-1.5 rounded-full"
+                  className="text-ink/75 hover:text-ink hover:bg-cream text-sm font-medium whitespace-nowrap transition-colors px-3 py-1.5 rounded-full"
                 >
                   {link.label}
                 </button>
               ))}
             </div>
 
-            {/* Right side (desktop) */}
-            <div className="hidden md:flex items-center gap-2">
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search products…"
-                  className="w-44 lg:w-56 pl-10 pr-3 py-2.5 bg-white border border-line rounded-full text-sm text-ink placeholder-gray-soft focus:outline-none focus:border-ink/40 focus:w-60 lg:focus:w-72 focus:shadow-[0_0_0_4px_rgba(21,19,26,0.04)] transition-all"
-                />
-              </form>
+            {/* Right side (desktop) — auth + Dashboard CTA. No search bar here:
+                desktop uses the in-page search; the navbar search lives only in
+                the hamburger menu (below lg). With the search gone the bar fits
+                comfortably from lg up. */}
+            <div className="hidden lg:flex items-center gap-2">
               {/* THEME_TOGGLE_DISABLED: dark mode is paused. */}
               {user ? (
                 <>
                   {user.role === 'admin' && (
-                    <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-red font-semibold px-3 py-2 rounded-full hover:bg-red/10 transition-colors" title="Admin console">
-                      <Shield className="w-4 h-4" /><span className="hidden lg:inline">Admin</span>
+                    <Link to="/admin" className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap text-sm text-red font-semibold px-3 py-2 rounded-full hover:bg-red/10 transition-colors" title="Admin console">
+                      <Shield className="w-4 h-4" /><span className="hidden xl:inline">Admin</span>
                     </Link>
                   )}
-                  <Link to="/account" className="inline-flex items-center gap-1.5 text-sm text-ink/80 hover:text-ink px-3 py-2 rounded-full hover:bg-cream transition-colors">
-                    <UserIcon className="w-4 h-4" />
-                    <span className="hidden lg:inline">{user.displayName || 'Account'}</span>
+                  <Link to="/account" className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap text-sm text-ink/80 hover:text-ink px-3 py-2 rounded-full hover:bg-cream transition-colors">
+                    <UserIcon className="w-4 h-4 shrink-0" />
+                    <span className="hidden xl:inline-block max-w-[7rem] truncate align-middle">{user.displayName || 'Account'}</span>
                   </Link>
                 </>
               ) : (
-                <Link to="/sign-in" className="text-sm text-ink/70 hover:text-ink font-medium px-3 py-2 rounded-full hover:bg-cream transition-colors hidden md:inline-block">
+                <Link to="/sign-in" className="text-sm text-ink/70 hover:text-ink font-medium px-3 py-2 rounded-full hover:bg-cream transition-colors shrink-0 whitespace-nowrap hidden md:inline-block">
                   Sign in
                 </Link>
               )}
-              <Link to="/dashboard" className="btn-accent !text-sm !px-4 !py-2.5">
+              <Link to="/dashboard" className="btn-accent shrink-0 !text-sm !px-4 !py-2.5">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden lg:inline">Dashboard</span>
               </Link>
@@ -125,7 +122,7 @@ export default function Navbar() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden w-10 h-10 -mr-1 flex items-center justify-center rounded-full hover:bg-ink/5 active:scale-95 transition-all"
+              className="lg:hidden w-10 h-10 -mr-1 flex items-center justify-center rounded-full hover:bg-ink/5 active:scale-95 transition-all"
               aria-label="Toggle menu"
             >
               <div className="relative w-5 h-5">
@@ -137,9 +134,9 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile fullscreen menu */}
+      {/* Mobile / tablet menu — covers everything below lg */}
       <div
-        className={`md:hidden fixed inset-0 z-40 transition-all duration-300 ${
+        className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${
           mobileOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
       >
@@ -148,7 +145,7 @@ export default function Navbar() {
           onClick={() => setMobileOpen(false)}
         />
         <div
-          className={`absolute top-14 left-3 right-3 bg-cream rounded-3xl shadow-[var(--shadow-lift)] border border-line-strong overflow-hidden transition-all duration-300 ${
+          className={`absolute top-14 sm:top-16 left-3 right-3 md:left-auto md:right-4 md:w-80 bg-cream rounded-3xl shadow-[var(--shadow-lift)] border border-line-strong overflow-hidden transition-all duration-300 ${
             mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
           }`}
         >
